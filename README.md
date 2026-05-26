@@ -1,5 +1,7 @@
 # Steering Cursor with docs, rules, and skills
 
+![Bento Grid tool generated from a single prompt: a 240px panel with Layout and Style & content controls on the left, and an asymmetric bento grid of marketing cards on the canvas.](docs/images/bento-grid-example.png)
+
 This repo is a harness for generating Figma plugins from a single prompt. The interesting part isn't the plugin output — it's the **layered context system** that pushes a general-purpose coding model toward a specific, opinionated style of tool.
 
 The goal: take a one-line prompt like *"Create a custom tool that swaps Lorem Ipsum with real-looking copy"* and get back a working, polished Figma plugin that matches a strict house style — every time, without back-and-forth.
