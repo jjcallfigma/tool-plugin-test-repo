@@ -1,142 +1,133 @@
-# CursorVsAgent
+# Steering Cursor with docs, rules, and skills
 
-Side-by-side comparison: **Cursor + Claude building a Figma plugin** vs **Figma's Assistant building a GenTool**. Same prompt, two environments.
+This repo is a harness for generating Figma plugins from a single prompt. The interesting part isn't the plugin output — it's the **layered context system** that pushes a general-purpose coding model toward a specific, opinionated style of tool.
 
-The premise: GenTools are plugins under the hood. If Cursor + Claude can produce a working, polished plugin from the same prompt in under 3 minutes, and Assistant is taking 20, that's the gap to talk about.
+The goal: take a one-line prompt like *"Create a custom tool that swaps Lorem Ipsum with real-looking copy"* and get back a working, polished Figma plugin that matches a strict house style — every time, without back-and-forth.
 
-This workspace is the Cursor side of the comparison. It's loaded with everything Cursor needs to produce a GenTool-quality plugin from a paste-ready prompt.
+The output quality comes from stacking three layers of guidance: **always-on rules**, **deep reference docs**, and **on-demand skills**. Each layer does a different job. None of them work well alone.
+
+## The three layers
+
+### 1. Rules — always-on, short, prescriptive
+
+`.cursor/rules/*.mdc` files Cursor loads automatically based on context.
+
+| Rule | When it loads | What it does |
+|---|---|---|
+| `00-philosophy.mdc` | Every prompt | Six hard rules every tool must obey (one-shot output, explicit first run, persistent controls, etc.) + forbidden words |
+| `05-custom-tool-trigger.mdc` | Every prompt | Maps the opener *"Create a custom tool…"* to a specific workflow |
+| `10-plugin-code.mdc` | Editing `code.ts` | Required sandbox shape (typed messages, `regenerate(state, mode)`, output targeting) |
+| `11-network-open-apis.mdc` | Editing `code.ts` | Allowed vs forbidden network patterns |
+| `20-ui-html.mdc` | Editing `ui.template.html` / `ui.html` | FigUI3 init, commit-fire, footer spec |
+| `30-manifest.mdc` | Editing `manifest.json` | "Don't touch this" enforcement |
+
+Rules are short because they fire constantly. They tell the model **what is non-negotiable**, not how to do it. The "how" lives in docs.
+
+**Why this matters:** without rules, the model defaults to plausible-but-wrong patterns (live-drag updates, modals for errors, auto-running on plugin open, the word "plugin" in UI strings). The model isn't wrong by default — it just has no reason to know our house style. Rules give it that reason on every turn.
+
+### 2. Docs — deep reference, loaded on demand
+
+`docs/*.md` files the rules and `AGENTS.md` point to. The model reads them when it needs the full picture.
+
+| Doc | What it covers |
+|---|---|
+| `01-what-is-a-good-tool.md` | The bar — what makes a tool feel like a GenTool |
+| `02-propskit-reference.md` | Allowed control catalog (FigUI3 components) |
+| `03-figma-plugin-basics.md` | Plugin API quickstart |
+| `04-glossary.md` | Forbidden words in UI strings |
+| `07-plugin-practices.md` | The complete practices checklist — state, relaunch, message passing, output targeting, fonts, colors, errors |
+| `08-figui3-ui.md` | FigUI3 setup, bundling, panel layout, spacing, color picker, auto-resize |
+| `09-plugin-structure-and-reset.md` | Required file structure and reset workflow |
+| `10-network-open-apis.md` | Public `fetch` patterns, no API keys |
+
+Docs are long, opinionated, and include working code blocks. Rules say *"use commit-fire, not live updates"*; the docs explain why, show the binding pattern, and list the gotchas that caused us to write the rule in the first place.
+
+**Why this matters:** the model can't fit every detail in its working memory on every turn. Docs are the deep reference it pulls in when a rule says *"see `docs/07-plugin-practices.md > Output targeting`"*. The rule fires the lookup; the doc supplies the answer.
+
+### 3. Skills — task-specific recipes, opt-in
+
+`.cursor/skills/*/SKILL.md` files the model loads only when a prompt matches a specific shape.
+
+| Skill | Triggers when |
+|---|---|
+| `color-picker-ui` | Tool prompt needs a color control (`fig-input-color`) |
+| `open-api-tools` | Tool prompt needs live data from a public HTTP API |
+
+Skills are the most targeted layer. They exist because some patterns are gnarly enough that scattering the knowledge across docs isn't enough — you need one focused recipe that handles the whole problem end to end.
+
+The color picker skill, for example, exists because FigUI3's color popover breaks in three different ways inside a 240px plugin iframe. Without a skill, the model would re-derive the wrong fix every time. With it, the model loads one file, gets the working CSS + JS pattern, and moves on.
+
+**Why this matters:** rules are always on (cheap to apply, expensive to bloat). Docs are deep but generic. Skills are narrow and only pulled in when relevant. Together they form a context budget that scales: simple prompts pay almost nothing, complex prompts pay only for what they need.
+
+## The two reinforcement mechanisms
+
+### `AGENTS.md` — the project briefing
+
+Cursor reads `AGENTS.md` at chat start. It's the entry point: tells the model what this workspace is, what the trigger phrase means, **what to read before writing code** (in order), and what the file structure looks like.
+
+Without `AGENTS.md`, even with rules and docs sitting in the repo, the model has no map. It might find the right doc eventually — or it might not. `AGENTS.md` removes the chance.
+
+### Reference implementations — worked examples
+
+`reference/01-generator-color-swatch/` and `reference/02-action-layer-renamer/` are full, working tools that demonstrate every practice in the docs.
+
+Docs tell the model *what* to do. References show *how it looks when done right*. The model can pattern-match against a reference faster than it can reassemble principles from prose.
+
+## Why this stack works (and why each piece is load-bearing)
+
+| Layer | Strength | If removed |
+|---|---|---|
+| Rules | Always-on; cheap; catches the obvious failure modes | Model regresses to generic patterns; forbidden words slip in; live-drag returns |
+| Docs | Deep; opinionated; cites the rationale | Rules become unexplained dogma; model can't recover from edge cases |
+| Skills | Narrow; expensive context only when needed | Gnarly patterns (color picker, fetch) get re-derived wrong each run |
+| `AGENTS.md` | The map | Model doesn't know where to look; reads the wrong files in the wrong order |
+| Reference impls | Pattern to match against | Model assembles from principles, which is slower and more error-prone |
+
+The output quality is a function of how well these layers cover the surface area of the task. Every time a generation goes sideways, the fix is: **which layer should have caught this?** If it's a one-off, add it to a rule. If it has nuance, write a doc. If it's a self-contained recipe, make it a skill. If it's structural, update `AGENTS.md`.
+
+## How to extend the system
+
+When you spot a new failure mode in a generated tool:
+
+1. **Always-on, one-liner fix?** → add to `00-philosophy.mdc` or the relevant scoped rule.
+2. **Needs rationale + code examples?** → new section in the right `docs/` file, then link from the rule.
+3. **Self-contained recipe for a specific control or API pattern?** → new `.cursor/skills/<name>/SKILL.md`.
+4. **Affects which files the model reads or in what order?** → update `AGENTS.md`.
+5. **Pattern worth showing end-to-end?** → add or extend a `reference/` example.
+
+The system is designed to absorb fixes without bloating any single layer. Rules stay short. Docs stay deep. Skills stay narrow. `AGENTS.md` stays a map.
 
 ## Workspace map
 
 ```
-CursorVsAgent/
-├── README.md                       ← you are here
-├── AGENTS.md                       ← Cursor reads this automatically
+.
+├── AGENTS.md                  ← project briefing, read at chat start
 ├── .cursor/
-│   └── rules/
-│       ├── 00-philosophy.mdc       ← always-on rules
-│       ├── 05-custom-tool-trigger.mdc  ← always-on: "Create a custom tool" → build plugin
-│       ├── 10-plugin-code.mdc      ← auto-attaches when editing code.ts
-│       ├── 20-ui-html.mdc          ← auto-attaches when editing ui.template.html / ui.html
-│       └── 30-manifest.mdc         ← auto-attaches when editing manifest.json
-├── docs/
-│   ├── 01-what-is-a-good-tool.md
-│   ├── 02-propskit-reference.md
-│   ├── 03-figma-plugin-basics.md
-│   ├── 04-glossary.md
-│   ├── 05-test-prompts.md
-│   ├── 06-test-protocol.md
-│   ├── 07-plugin-practices.md
-│   ├── 08-figui3-ui.md
-│   └── 09-plugin-structure-and-reset.md
-├── scaffold/                       ← empty starting point (reset source)
-│   └── src/
-│       ├── code.ts
-│       └── ui.template.html
-└── template/                       ← Figma imports manifest from here
-    ├── manifest.json               ← STABLE. Imported once.
-    ├── package.json
-    ├── scripts/
-    │   ├── bundle-ui.mjs
-    │   └── reset-template.mjs
-    ├── tsconfig.json
+│   ├── rules/                 ← always-on / context-scoped guidance
+│   └── skills/                ← opt-in recipes for gnarly patterns
+├── docs/                      ← deep reference, cited by rules
+├── reference/                 ← worked example tools (Generator + Action)
+├── scaffold/                  ← empty starting point for each test run
+└── template/                  ← the actual plugin Figma imports
     └── src/
-        ├── code.ts                 ← Cursor overwrites each run
-        ├── ui.template.html        ← Cursor overwrites each run
-        ├── ui.html                 ← generated
-        └── vendor/                 ← FigUI3 (from npm install)
+        ├── code.ts            ← overwritten on each generation
+        └── ui.template.html   ← overwritten on each generation
 ```
 
 ## One-time setup
 
-You only do this once:
-
 ```bash
-cd /path/to/CursorVsAgent/template
+cd template
 npm install
 npm run build
 ```
 
-`npm install` pulls FigUI3, TypeScript, and plugin typings. `postinstall` copies FigUI3 vendor files and runs `bundle-ui`. `npm run build` bundles the UI and compiles `code.ts` → `code.js`.
+Then in Figma Desktop: **Plugins → Development → Import plugin from manifest** → pick `template/manifest.json`. The plugin appears as **GenTool Comparison** under Plugins → Development. From that point on, every regeneration replaces `template/src/` in place — no re-import needed.
 
-Then in **Figma Desktop**:
-
-1. Plugins → Development → Import plugin from manifest
-2. Pick `CursorVsAgent/template/manifest.json`
-3. The plugin shows up as **GenTool Comparison** under Plugins → Development
-
-Run it once to verify the pipeline works. You should see a small frame with colored tiles and a label like "count: 6 · density: 50 · light." If that renders, your dev plugin is wired up and you're ready for the comparison.
-
-## Per-run workflow (generation test)
-
-1. **Reset:** `cd template && npm run reset` — see `docs/09-plugin-structure-and-reset.md`
-2. **Fresh Cursor chat** — paste a prompt starting with **`Create a custom tool that…`** (see `docs/05-test-prompts.md`)
-3. Cursor overwrites `template/src/code.ts` and `template/src/ui.template.html`, runs build
-4. **Figma:** Plugins → Development → **GenTool Comparison** (same entry; no re-import)
-5. Score with `docs/06-test-protocol.md`
-
-Do **not** wipe `template/` or `node_modules/` between runs.
-
-**In Figma Assistant (parallel window):**
-
-1. Paste the same prompt verbatim into Assistant.
-2. Watch it build.
-
-Stopwatch:
-
-- **T1: first visible output** — when does the user see *anything* (UI panel or frame)?
-- **T2: complete and usable** — when can the user tweak a control and see it work?
-- **T3: total elapsed**
-
-Record both sides for each prompt.
-
-## Why the manifest stays stable
-
-Cursor overwrites `src/code.ts` and `src/ui.template.html` (which generates `ui.html`). The manifest name and id never change. That means you import the plugin into Figma **once**, and every subsequent comparison uses the same dev plugin entry. Faster, less friction, no re-import dance during a live demo.
-
-## How the rules work
-
-Cursor reads `.cursor/rules/*.mdc` based on context:
-
-- **`05-custom-tool-trigger.mdc`** has `alwaysApply: true` → fires on `Create a custom tool…` opener
-- **`00-philosophy.mdc`** has `alwaysApply: true` → loaded on every prompt
-- **`10-plugin-code.mdc`** has `globs: **/code.ts` → loaded when editing `code.ts`
-- **`20-ui-html.mdc`** has `globs: **/ui.template.html`, `**/ui.html` → loaded when editing UI files
-- **`30-manifest.mdc`** has `globs: **/manifest.json` → loaded only if you edit the manifest (you shouldn't)
-
-`AGENTS.md` is read at chat start as project context.
-
-## Fairness rules
-
-- Same prompt verbatim, both environments
-- Same control catalog (PropsKit via FigUI3 web components), both environments
-- Same archetypes (Generator, Action)
-- Same forbidden words in UI strings
-- Same persistence model (`setPluginData`)
-- Same explicit-first-run expectation (Generate button, no auto-fire on open)
-
-The only thing different is the system around the model: Cursor's harness + Claude vs. Figma's Assistant infrastructure. That's exactly what the comparison should isolate.
-
-## What this is NOT
-
-- Not an attack on the Assistant team. The point is to show user expectation vs. current reality with a fair benchmark.
-- Not a production replacement. The plugins Cursor builds here are demo artifacts, not what would ship as Code Objects.
-- Not a feature parity claim. GenTools include orchestration, persistence, multi-tool, left-rail discovery, etc. that this comparison doesn't touch. This is specifically about **generation speed and output quality** for a single tool.
-
-## Archiving runs you care about
-
-Cursor overwrites in place, so each new prompt erases the last build. If you want to keep a particular result (e.g., the Bento Grid you demoed):
+## Per-run workflow
 
 ```bash
-cd CursorVsAgent
-git init && git add -A && git commit -m "bento grid run"
+cd template && npm run reset     # wipes src/ back to scaffold
 ```
 
-Or copy the `template/src/` folder somewhere safe before kicking off the next prompt.
-
-## Cross-references in the vault
-
-- Master GenTools context: `Projects/GenTools/Gentools HQ.md`
-- Tool specs (where these prompts come from): `Projects/GenTools/EAP-Tool-Specs.md`
-- PropsKit decisions: `Projects/Archive/GenTools Cowork Dump/Propskit Backlog.md`
-- Playground context: `Projects/GenTools/gentools-playground-context.md`
+Then open a fresh Cursor chat and paste a prompt starting with **`Create a custom tool that…`**. Cursor reads `AGENTS.md`, pulls the right rules and docs, writes `code.ts` + `ui.template.html`, runs the build, and tells you to re-run the tool in Figma.
