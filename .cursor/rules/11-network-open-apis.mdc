@@ -1,0 +1,25 @@
+---
+description: Public open API fetch rules for GenTool comparison plugins. Auto-attaches when editing sandbox code.
+globs:
+  - "**/code.ts"
+  - "template/src/code.ts"
+alwaysApply: false
+---
+
+# Public open APIs
+
+The comparison template manifest uses `networkAccess.allowedDomains: ["*"]`. **Do not edit `manifest.json`** during generation.
+
+## Allowed
+
+- `await fetch('https://…')` in `code.ts` to **public** endpoints (no API key, no OAuth)
+- Errors surfaced with `figma.notify` inside `try/catch`
+- First fetch on **Generate** / **Apply**, not on plugin open (Generators)
+
+## Forbidden
+
+- API key / token text fields in the UI
+- `Authorization` headers or `clientStorage` for secrets
+- Authenticated or private APIs
+
+Full guide: **`docs/10-network-open-apis.md`**. Skill: **`.cursor/skills/open-api-tools/SKILL.md`**.

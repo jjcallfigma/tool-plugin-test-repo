@@ -1,0 +1,19 @@
+{
+  "name": "gentool-cursor-template",
+  "version": "1.0.0",
+  "description": "Starter template for building GenTool-style Figma plugins in Cursor",
+  "scripts": {
+    "build": "npm run bundle-ui && tsc",
+    "watch": "tsc --watch",
+    "bundle-ui": "node scripts/bundle-ui.mjs",
+    "reset": "node scripts/reset-template.mjs",
+    "postinstall": "mkdir -p src/vendor && cp node_modules/@rogieking/figui3/dist/fig.css node_modules/@rogieking/figui3/dist/fig.js src/vendor/ && npm run bundle-ui"
+  },
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.108.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@rogieking/figui3": "^4.13.1"
+  }
+}

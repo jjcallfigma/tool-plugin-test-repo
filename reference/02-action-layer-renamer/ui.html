@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Layer Renamer</title>
+<style>
+  /* PropsKit reference styles — abbreviated. Full block ships in template/src/ui.html. */
+</style>
+</head>
+<body>
+
+  <div class="propskit-row">
+    <label for="prefix">Prefix</label>
+    <input type="text" id="prefix" class="propskit-text" placeholder="Optional prefix" value="" />
+  </div>
+
+  <div class="propskit-row">
+    <label for="pattern">Pattern</label>
+    <select id="pattern" class="propskit-dropdown">
+      <option value="numbered">Numbered (01, 02, ...)</option>
+      <option value="hexcode">Hex code of fill</option>
+      <option value="role-based">Role (frame, text, ...)</option>
+    </select>
+  </div>
+
+  <div class="propskit-footer">
+    <button id="apply" class="propskit-button">Apply to selection</button>
+  </div>
+
+<script>
+  // ============================================================
+  // PRACTICES DEMONSTRATED:
+  //   1. Action UI is form + Apply button. NO commit-fire.
+  //   2. No auto-run on DOMContentLoaded — Actions wait for explicit click.
+  //   3. Apply button posts an 'apply' message with the current form values.
+  //   4. No selection-change rehydration — Actions are stateless.
+  // ============================================================
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('apply').addEventListener('click', () => {
+      parent.postMessage({
+        pluginMessage: {
+          type: 'apply',
+          prefix: document.getElementById('prefix').value,
+          pattern: document.getElementById('pattern').value,
+        }
+      }, '*');
+    });
+  });
+</script>
+
+</body>
+</html>

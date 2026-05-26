@@ -1,0 +1,210 @@
+---
+description: Rules for plugin sandbox code (code.ts). Auto-attaches when editing TypeScript files.
+globs:
+  - "**/code.ts"
+  - "**/src/code.ts"
+  - "template/src/code.ts"
+alwaysApply: false
+---
+
+# Plugin sandbox code rules
+
+This file describes how to write `src/code.ts`, the plugin sandbox entry. Companion to `docs/03-figma-plugin-basics.md` and `docs/07-plugin-practices.md`.
+
+**Before writing, read `reference/01-generator-color-swatch/code.ts` (for Generators) or `reference/02-action-layer-renamer/code.ts` (for Actions).** They show every practice working together.
+
+## Required shape (Generators)
+
+```ts
+/**
+ * Tool: <name>
+ * Does: <one-line description>
+ * Output strategy: new auto-layout frame
+ * Regenerate behavior: commit-fire updates selected tool output; Generate adds new when none selected
+ * Assumptions: <any ambiguity calls you made>
+ */
+
+figma.showUI(__html__, { width: 240, height: 320, themeColors: true });
+
+type State = { /* tool-specific shape */ };
+
+type UiToCodeMessage =
+  | { type: 'generate'; state: State }
+  | { type: 'regenerate'; state: State }
+  | { type: 'resize'; height: number };
+
+type CodeToUiMessage =
+  | { type: 'loadState'; state: State }
+  | { type: 'outputSelected'; selected: boolean };
+
+const TOOL_ID = '<your-tool-id>';
+
+let currentOutput: FrameNode | null = null;
+let isRegenerating = false;
+
+function getSelectedToolFrame(): FrameNode | null {
+  const sel = figma.currentPage.selection[0];
+  if (sel?.type === 'FRAME' && sel.getPluginData('toolId') === TOOL_ID) {
+    return sel;
+  }
+  return null;
+}
+
+async function regenerate(state: State, mode: 'create' | 'update'): Promise<void> {
+  if (isRegenerating) return;
+  isRegenerating = true;
+  try {
+    let posX = 0;
+    let posY = 0;
+
+    if (mode === 'update') {
+      const existing = getSelectedToolFrame();
+      if (!existing) return;
+      posX = existing.x;
+      posY = existing.y;
+      existing.remove(); // only the selected tool frame
+    }
+    // create mode: do NOT remove currentOutput or other tool frames
+
+    const frame = figma.createFrame();
+    // ... build output ...
+
+    frame.setPluginData('toolState', JSON.stringify(state));
+    frame.setPluginData('toolId', TOOL_ID);
+    frame.setRelaunchData({ regenerate: '...', edit: '...' });
+
+    if (mode === 'update') {
+      frame.x = posX;
+      frame.y = posY;
+    } else {
+      frame.x = figma.viewport.center.x - frame.width / 2;
+      frame.y = figma.viewport.center.y - frame.height / 2;
+      figma.viewport.scrollAndZoomIntoView([frame]);
+    }
+
+    currentOutput = frame;
+    figma.currentPage.selection = [frame];
+    figma.ui.postMessage({ type: 'outputSelected', selected: true });
+  } catch (err) {
+    figma.notify(`Could not regenerate: ${(err as Error).message}`);
+  } finally {
+    isRegenerating = false;
+  }
+}
+
+figma.ui.onmessage = async (msg: UiToCodeMessage) => {
+  if (msg.type === 'generate') {
+    const selected = getSelectedToolFrame();
+    await regenerate(msg.state, selected ? 'update' : 'create');
+  } else if (msg.type === 'regenerate') {
+    await regenerate(msg.state, 'update');
+  }
+};
+
+figma.on('selectionchange', () => {
+  const toolFrame = getSelectedToolFrame();
+  figma.ui.postMessage({ type: 'outputSelected', selected: !!toolFrame });
+  if (!toolFrame) return;
+  const raw = toolFrame.getPluginData('toolState');
+  if (raw) {
+    figma.ui.postMessage({ type: 'loadState', state: JSON.parse(raw) });
+    currentOutput = toolFrame;
+  }
+});
+```
+
+### Output targeting (default — do not deviate)
+
+| Action | Behavior |
+|---|---|
+| **Generate**, no tool frame selected | **Add** a new frame. **Never** delete other tool outputs. |
+| **Generate**, this tool's frame selected | **Update** that frame (same x/y) |
+| **Control change** | **Update** only if this tool's frame is selected; otherwise **no-op** |
+| **Relaunch → Regenerate** | Update selected tool frame |
+
+The UI gates `regenerate` on `outputSelected` from `selectionchange`. See `docs/07-plugin-practices.md > Output targeting`.
+
+## Type the message shapes
+
+Always type messages between UI and code. No `any`.
+
+## Public open APIs
+
+The template manifest allows `fetch` (`allowedDomains: ["*"]`). Read **`docs/10-network-open-apis.md`** when the prompt needs live data.
+
+- Call `fetch` from **`code.ts`** inside `generate` / `regenerate` / Apply — not on plugin open (Generators).
+- **No API keys**, tokens, or auth headers.
+- Comment API URL(s) at the top of `code.ts`.
+- Use existing `try/catch` + `figma.notify` for failures.
+
+## Node lookup (`documentAccess: "dynamic-page"`)
+
+The template manifest sets `"documentAccess": "dynamic-page"`. **`figma.getNodeById()` throws** in that mode. Use async lookup whenever you deserialize an id from `toolState`:
+
+```ts
+const node = await figma.getNodeByIdAsync(state.sourceFrameId);
+if (!node || node.removed) return;
+```
+
+Call from `async` functions only (`regenerate`, `figma.ui.onmessage`, relaunch `figma.command` handlers). Current selection and nodes you just created do not need id lookup.
+
+## Plugin API conventions
+
+- Colors are `{ r, g, b }` floats 0-1, not 0-255. Convert from hex with a helper.
+- `node.fills`, `node.strokes`, `node.effects` are read-only arrays — assign a new array, do not mutate.
+- `figma.loadFontAsync` must `await` before setting `text.characters`.
+- Use `figma.notify('...')` for ephemeral messages. Never block with modals.
+- Use `figma.viewport.scrollAndZoomIntoView([node])` after **creating** new output so the user sees it. Skip on in-place updates.
+
+## Persistence pattern (Generators)
+
+Always store state on the output node:
+
+```ts
+frame.setPluginData('toolState', JSON.stringify(state));
+frame.setPluginData('toolId', TOOL_ID);
+```
+
+The `toolId` lets you safely identify this tool's nodes vs. others' on selection change.
+
+## Relaunch buttons (both archetypes)
+
+After producing or modifying a node, attach relaunch data so the user can re-run the tool from the node's Inspect panel:
+
+```ts
+frame.setRelaunchData({
+  regenerate: 'Regenerate with current values',
+  edit: 'Open this tool to edit',
+});
+```
+
+The command names (`regenerate`, `edit`) are pre-declared in the manifest's `relaunchButtons`. Use exactly those names.
+
+## Relaunch command handling at startup
+
+```ts
+if (figma.command === 'regenerate') {
+  const sel = getSelectedToolFrame();
+  if (sel) {
+    const raw = sel.getPluginData('toolState');
+    if (raw) void regenerate(JSON.parse(raw) as State, 'update');
+  }
+}
+```
+
+Without this, the plugin opens but ignores the relaunch context.
+
+## Error handling
+
+Wrap mutations in try/catch and surface failures via `figma.notify`. Never let mutations fail silently.
+
+## What NOT to do
+
+- **Don't** `currentOutput.remove()` on every `generate` — that deletes previous charts/outputs when the user wanted a new one alongside.
+- **Don't** regenerate on control change when nothing is selected — stacks orphan frames.
+- Don't use `figma.getNodeById` — use `figma.getNodeByIdAsync` with `await` when resolving stored node ids.
+- Don't add API key fields or store secrets in `clientStorage` — public open endpoints only.
+- Don't create separate files for utilities. Keep helpers inside `code.ts`.
+- Don't use `figma.clientStorage` for tool state — node `setPluginData` is the persistence model.
+- Don't poll. Use `figma.on('selectionchange', ...)` and message-based regeneration.
+- Don't `figma.closePlugin()` automatically. Let the user close when they want.

@@ -1,0 +1,40 @@
+---
+description: Rules for manifest.json. Auto-attaches when editing the manifest.
+globs:
+  - "**/manifest.json"
+alwaysApply: false
+---
+
+# manifest.json rules
+
+## Required shape
+
+```json
+{
+  "name": "Tool name (user-facing, plain English)",
+  "id": "kebab-case-unique-id",
+  "api": "1.0.0",
+  "main": "src/code.js",
+  "ui": "src/ui.html",
+  "editorType": ["figma"],
+  "networkAccess": {
+    "allowedDomains": ["*"],
+    "reasoning": "Public open HTTP APIs only; no API keys in generated tools."
+  },
+  "documentAccess": "dynamic-page"
+}
+```
+
+## Field rules
+
+- **`name`** is user-facing. Use natural English. No "Plugin" suffix. Example: `"Bento Grid"`, not `"Bento Grid Plugin"`.
+- **`id`** is internal. Kebab-case, unique. Example: `"bento-grid-tool"`.
+- **`main`** points to the compiled JS, which lives next to `code.ts`. `npx tsc` produces `src/code.js` from `src/code.ts`.
+- **`networkAccess`** is pre-set to `["*"]` for public open APIs (no API keys). **Do not change** per generation run. See `docs/10-network-open-apis.md`. If this file changes in git, the human re-imports the dev plugin once in Figma.
+- **`documentAccess: "dynamic-page"`** allows the plugin to access pages other than the current one. Keep this default. Sandbox code must use `figma.getNodeByIdAsync`, not `figma.getNodeById`, when resolving ids from `toolState` (see `docs/07-plugin-practices.md`).
+
+## Do not add
+
+- No `parameters` block — V1 tools don't use prompted parameters.
+- No `commands` array unless the tool genuinely has multiple distinct actions (e.g., "Cleanup duplicates" + "Cleanup unused styles" in one plugin). Single-purpose tools omit `commands`.
+- No `relaunchButtons` — handle re-opening via the standard plugin run flow.

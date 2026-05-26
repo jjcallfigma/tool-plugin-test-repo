@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Color Swatch Grid</title>
+<style>
+  /* PropsKit reference styles — ABBREVIATED here for the example.
+     In the real template/src/ui.html, the full style block ships pre-baked.
+     This example assumes the same classes are available. */
+</style>
+</head>
+<body>
+
+  <div class="propskit-row">
+    <label for="count">Count</label>
+    <input type="number" id="count" class="propskit-number" min="1" max="12" value="5" />
+  </div>
+
+  <div class="propskit-row">
+    <label for="cellSize">Cell size</label>
+    <input type="range" id="cellSize" class="propskit-slider" min="24" max="96" value="56" />
+  </div>
+
+  <div class="propskit-row">
+    <label for="cornerRadius">Corner radius</label>
+    <input type="range" id="cornerRadius" class="propskit-slider" min="0" max="32" value="8" />
+  </div>
+
+  <div class="propskit-row">
+    <label for="gap">Gap</label>
+    <input type="range" id="gap" class="propskit-slider" min="0" max="32" value="8" />
+  </div>
+
+  <div class="propskit-row">
+    <label for="color">Color</label>
+    <input type="color" id="color" class="propskit-color" value="#0D99FF" />
+  </div>
+
+<script>
+  // ============================================================
+  // PRACTICES DEMONSTRATED:
+  //   1. getStateFromForm / setStateInForm — single source of truth
+  //   2. commit-fire handlers (change, not input)
+  //   3. auto-run on DOMContentLoaded so user sees output immediately
+  //   4. message listener that handles { type: 'loadState' } from code.ts
+  //   5. shape of the message payload matches the typed contract in code.ts
+  // ============================================================
+
+  function getStateFromForm() {
+    return {
+      count: parseInt(document.getElementById('count').value, 10),
+      cellSize: parseInt(document.getElementById('cellSize').value, 10),
+      cornerRadius: parseInt(document.getElementById('cornerRadius').value, 10),
+      gap: parseInt(document.getElementById('gap').value, 10),
+      color: document.getElementById('color').value,
+    };
+  }
+
+  function setStateInForm(state) {
+    if (state.count !== undefined) document.getElementById('count').value = state.count;
+    if (state.cellSize !== undefined) document.getElementById('cellSize').value = state.cellSize;
+    if (state.cornerRadius !== undefined) document.getElementById('cornerRadius').value = state.cornerRadius;
+    if (state.gap !== undefined) document.getElementById('gap').value = state.gap;
+    if (state.color !== undefined) document.getElementById('color').value = state.color;
+  }
+
+  function fireRegenerate() {
+    parent.postMessage({
+      pluginMessage: { type: 'regenerate', state: getStateFromForm() }
+    }, '*');
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // Commit-fire on every control. Use 'change', NEVER 'input'.
+    document.querySelectorAll('input, select').forEach((el) => {
+      el.addEventListener('change', fireRegenerate);
+    });
+
+    // Auto-run on creation: first render before the user touches anything
+    parent.postMessage({
+      pluginMessage: { type: 'generate', state: getStateFromForm() }
+    }, '*');
+  });
+
+  // Rehydrate when code.ts sends state from a re-selected node
+  window.onmessage = (event) => {
+    const msg = event.data.pluginMessage;
+    if (msg && msg.type === 'loadState') {
+      setStateInForm(msg.state);
+    }
+  };
+</script>
+
+</body>
+</html>
