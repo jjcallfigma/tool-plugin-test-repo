@@ -2,15 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>GenTool Comparison</title>
+<title>Org Chart Builder</title>
 <style>
 <!-- FIGUI3_CSS -->
 </style>
 <style>
-  /* FigUI3 vendor CSS sets html { height: 100% } which pins the document to
-     the iframe and breaks shrink-to-fit. Override to auto so the
-     ResizeObserver on #plugin-root sees real size changes.
-     See docs/08-figui3-ui.md > Auto-resize. */
   html, body {
     margin: 0;
     padding: 0;
@@ -26,9 +22,6 @@
     height: auto;
   }
 
-  /* Generative tools panel spacing — copy with tool UI; see docs/08-figui3-ui.md */
-  /* Every section reserves 8px above and below its content so dividers
-     (between sections, above the footer) have symmetric breathing room. */
   fig-group {
     margin-bottom: 0;
     padding-bottom: var(--spacer-2);
@@ -39,9 +32,6 @@
     padding-top: var(--spacer-2);
   }
 
-  /* First section sits 12px below the panel top — gives the first title room
-     to breathe and matches the visual weight of later section dividers. */
-  body > fig-group:first-of-type,
   #plugin-root > fig-group:first-of-type {
     padding-top: 12px;
   }
@@ -67,12 +57,6 @@
     padding-bottom: var(--spacer-1);
   }
 
-  /* Footer spec: 16px sides, 12px top/bottom, 8px between buttons.
-     ALWAYS wrap buttons in <div class="footer-actions"> so padding stays
-     identical whether there's 1 or N buttons.
-     See docs/08-figui3-ui.md > Footer spec. */
-  /* Higher specificity than vendor's `fig-footer[borderless]` (box-shadow:none).
-     Spec: 12px top + bottom, 16px sides, 8px between buttons. */
   fig-footer,
   fig-footer[borderless] {
     box-shadow: inset 0 1px 0 var(--figma-color-border);
@@ -83,9 +67,7 @@
     padding: 12px 16px;
   }
 
-  fig-footer::before {
-    display: none;
-  }
+  fig-footer::before { display: none; }
 
   .footer-actions {
     display: flex;
@@ -98,10 +80,6 @@
     margin: 0;
   }
 
-  /* === Color picker (keep if the tool uses fig-input-color) ===
-     Required for Figma-style popover in 240px iframes. Do not remove or replace
-     with ad-hoc rules (no min-width on .fig-fill-picker-input-mode, no width:100%
-     on the mode dropdown). See docs/08-figui3-ui.md > Color picker. */
   dialog.fig-fill-picker-dialog {
     width: 240px;
     max-width: 240px;
@@ -137,60 +115,171 @@
     min-width: 0;
   }
 
-  /* Collapsible rows — animate height open/closed. The ResizeObserver on
-     #plugin-root follows each frame so the panel glides in sync. */
-  .collapsible {
-    display: grid;
-    grid-template-rows: 1fr;
-    transition: grid-template-rows 200ms ease, opacity 160ms ease;
-    opacity: 1;
+  /* People textarea */
+  .people-wrap {
+    padding: 0 var(--spacer-3) var(--spacer-2);
   }
-  .collapsible > .collapsible-inner {
-    overflow: hidden;
-    min-height: 0;
+
+  .people-hint {
+    font-size: 10px;
+    color: var(--figma-color-text-secondary, #888);
+    margin-bottom: 6px;
+    line-height: 1.4;
   }
-  .collapsible[collapsed] {
-    grid-template-rows: 0fr;
-    opacity: 0;
-    pointer-events: none;
+
+  #peopleText {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--figma-color-bg-secondary, #f5f5f5);
+    border: 1px solid var(--figma-color-border, #e0e0e0);
+    border-radius: 4px;
+    color: var(--figma-color-text, #1e1e1e);
+    font-family: 'Inter', monospace;
+    font-size: 10px;
+    line-height: 1.5;
+    padding: 6px 8px;
+    resize: vertical;
+    min-height: 110px;
+    outline: none;
+  }
+
+  #peopleText:focus {
+    border-color: var(--figma-color-border-brand-strong, #0d99ff);
+  }
+
+  /* Highlight text input */
+  .highlight-wrap {
+    padding: 0 var(--spacer-3) var(--spacer-2);
+  }
+
+  #highlightInput {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--figma-color-bg-secondary, #f5f5f5);
+    border: 1px solid var(--figma-color-border, #e0e0e0);
+    border-radius: 4px;
+    color: var(--figma-color-text, #1e1e1e);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    padding: 5px 8px;
+    outline: none;
+  }
+
+  #highlightInput:focus {
+    border-color: var(--figma-color-border-brand-strong, #0d99ff);
+  }
+
+  #highlightInput::placeholder {
+    color: var(--figma-color-text-disabled, #aaa);
   }
 </style>
 </head>
 <body>
 
 <div id="plugin-root">
-  <!-- Tool UI goes here: fig-group sections + fig-footer with Generate button.
-       Generator init: Generate → { type: 'generate' }; control change → regenerate
-       only when outputSelected (docs/07 > Output targeting). Generate must not
-       delete existing tool outputs when creating a new frame.
 
-       Generator footer pattern (always use this shape):
+  <!-- People list ─────────────────────────────────────────────────── -->
+  <fig-group>
+    <fig-header borderless><h3>People</h3></fig-header>
+    <div class="people-wrap">
+      <p class="people-hint">One person per line:<br>Name | Title | Team | Location | Manager Name</p>
+      <textarea id="peopleText" spellcheck="false" autocomplete="off" autocorrect="off">Alex Rivera | Chief Executive Officer | Leadership | HQ |
+Jordan Kim | VP Engineering | Engineering | HQ | Alex Rivera
+Morgan Lee | VP Design | Design | HQ | Alex Rivera
+Casey Chen | VP Marketing | Marketing | NYC | Alex Rivera
+Riley Park | Senior Engineer | Engineering | HQ | Jordan Kim
+Drew Singh | Staff Engineer | Engineering | London | Jordan Kim
+Quinn Adams | Lead Designer | Design | HQ | Morgan Lee
+Avery Brooks | Product Designer | Design | NYC | Morgan Lee
+Taylor Gomez | Growth Manager | Marketing | NYC | Casey Chen
+Sage Wilson | Brand Strategist | Marketing | London | Casey Chen</textarea>
+    </div>
+  </fig-group>
 
-       <fig-footer borderless>
-         <div class="footer-actions">
-           <fig-button id="run" variant="primary">Generate</fig-button>
-         </div>
-       </fig-footer>
+  <!-- Structure ────────────────────────────────────────────────────── -->
+  <fig-group>
+    <fig-header borderless><h3>Structure</h3></fig-header>
 
-       Color control (when needed):
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="layout">Layout</label>
+      <fig-dropdown id="layout" value="top-down">
+        <option value="top-down">Top-down</option>
+        <option value="left-right">Left-to-right</option>
+        <option value="radial">Radial</option>
+      </fig-dropdown>
+    </fig-field>
 
-       <fig-input-color id="accent" value="#0D99FF" text="true" alpha="true" picker="figma"></fig-input-color>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="depth">Depth</label>
+      <fig-input-number id="depth" value="3" min="1" max="5" steppers="true"></fig-input-number>
+    </fig-field>
 
-       See docs/08-figui3-ui.md (Footer spec, Color picker). -->
+  </fig-group>
+
+  <!-- Cards ────────────────────────────────────────────────────────── -->
+  <fig-group>
+    <fig-header borderless><h3>Cards</h3></fig-header>
+
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="cardStyle">Style</label>
+      <fig-dropdown id="cardStyle" value="full">
+        <option value="full">Full</option>
+        <option value="compact">Compact</option>
+        <option value="minimal">Minimal</option>
+      </fig-dropdown>
+    </fig-field>
+
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="colorRule">Color by</label>
+      <fig-dropdown id="colorRule" value="team">
+        <option value="team">Team</option>
+        <option value="level">Level</option>
+        <option value="geography">Location</option>
+      </fig-dropdown>
+    </fig-field>
+
+  </fig-group>
+
+  <!-- Connectors ───────────────────────────────────────────────────── -->
+  <fig-group>
+    <fig-header borderless><h3>Connectors</h3></fig-header>
+
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="connectorStyle">Style</label>
+      <fig-dropdown id="connectorStyle" value="right-angle">
+        <option value="right-angle">Right-angle</option>
+        <option value="curved">Curved</option>
+        <option value="straight">Straight</option>
+      </fig-dropdown>
+    </fig-field>
+
+  </fig-group>
+
+  <!-- Highlight ────────────────────────────────────────────────────── -->
+  <fig-group>
+    <fig-header borderless><h3>Highlight</h3></fig-header>
+    <div class="highlight-wrap">
+      <input id="highlightInput" type="text" placeholder="Name to highlight…" autocomplete="off" />
+    </div>
+  </fig-group>
+
+  <fig-footer borderless>
+    <div class="footer-actions">
+      <fig-button id="run" variant="primary">Generate</fig-button>
+    </div>
+  </fig-footer>
+
 </div>
 
 <script>
 <!-- FIGUI3_JS -->
 </script>
 <script>
-  // Auto-resize panel to hug content. See docs/08-figui3-ui.md > Auto-resize.
-  // measurePanelHeight + watchColorPickerDialog keep the iframe tall enough when
-  // the Figma color popover extends below #plugin-root (docs/08 > Color picker).
   var lastReportedHeight = 0;
   var resizeRaf = 0;
 
-  function reportHeight(height) {
-    var h = Math.ceil(height);
+  function reportHeight(h) {
+    h = Math.ceil(h);
     if (h && h !== lastReportedHeight) {
       lastReportedHeight = h;
       parent.postMessage({ pluginMessage: { type: 'resize', height: h } }, '*');
@@ -200,48 +289,115 @@
   function measurePanelHeight() {
     var root = document.getElementById('plugin-root');
     if (!root) return 0;
-    var height = Math.ceil(root.getBoundingClientRect().height);
+    var h = Math.ceil(root.getBoundingClientRect().height);
     var dialog = document.querySelector('dialog.fig-fill-picker-dialog[open]');
-    if (dialog) {
-      var dialogBottom = Math.ceil(dialog.getBoundingClientRect().bottom + 12);
-      height = Math.max(height, dialogBottom);
-    }
-    return height;
-  }
-
-  function reportPanelHeight() {
-    reportHeight(measurePanelHeight());
+    if (dialog) h = Math.max(h, Math.ceil(dialog.getBoundingClientRect().bottom + 12));
+    return h;
   }
 
   (function setupAutoResize() {
     var root = document.getElementById('plugin-root');
     if (!root || typeof ResizeObserver === 'undefined') return;
-    var observer = new ResizeObserver(function () {
+    new ResizeObserver(function () {
       if (resizeRaf) cancelAnimationFrame(resizeRaf);
-      resizeRaf = requestAnimationFrame(function () {
-        resizeRaf = 0;
-        reportPanelHeight();
-      });
-    });
-    observer.observe(root);
+      resizeRaf = requestAnimationFrame(function () { resizeRaf = 0; reportHeight(measurePanelHeight()); });
+    }).observe(root);
   })();
 
   (function watchColorPickerDialog() {
     if (typeof MutationObserver === 'undefined') return;
-    var observer = new MutationObserver(function () {
+    new MutationObserver(function () {
       if (resizeRaf) cancelAnimationFrame(resizeRaf);
-      resizeRaf = requestAnimationFrame(function () {
-        resizeRaf = 0;
-        reportPanelHeight();
-      });
-    });
-    observer.observe(document.body, {
-      subtree: true,
-      childList: true,
-      attributes: true,
-      attributeFilter: ['open'],
-    });
+      resizeRaf = requestAnimationFrame(function () { resizeRaf = 0; reportHeight(measurePanelHeight()); });
+    }).observe(document.body, { subtree: true, childList: true, attributes: true, attributeFilter: ['open'] });
   })();
+
+  // ─── App ──────────────────────────────────────────────────────────────────────
+
+  var hasGenerated = false;
+  var outputSelected = false;
+
+  function readValue(el) {
+    if (!el) return '';
+    if (typeof el.value !== 'undefined' && el.value !== null && el.value !== '') return String(el.value);
+    return el.getAttribute('value') || '';
+  }
+
+  function writeValue(el, val) {
+    if (!el) return;
+    el.setAttribute('value', String(val));
+    if ('value' in el) el.value = String(val);
+  }
+
+  function getStateFromForm() {
+    var ta = document.getElementById('peopleText');
+    var hi = document.getElementById('highlightInput');
+    return {
+      layout:         readValue(document.getElementById('layout'))         || 'top-down',
+      depth:          parseInt(readValue(document.getElementById('depth')), 10) || 3,
+      cardStyle:      readValue(document.getElementById('cardStyle'))      || 'full',
+      connectorStyle: readValue(document.getElementById('connectorStyle')) || 'right-angle',
+      highlight:      (hi ? hi.value : '') || '',
+      colorRule:      readValue(document.getElementById('colorRule'))      || 'team',
+      peopleText:     ta ? ta.value : '',
+    };
+  }
+
+  function setStateInForm(state) {
+    if (state.layout)         writeValue(document.getElementById('layout'), state.layout);
+    if (state.depth)          writeValue(document.getElementById('depth'), state.depth);
+    if (state.cardStyle)      writeValue(document.getElementById('cardStyle'), state.cardStyle);
+    if (state.connectorStyle) writeValue(document.getElementById('connectorStyle'), state.connectorStyle);
+    if (state.colorRule)      writeValue(document.getElementById('colorRule'), state.colorRule);
+
+    var hi = document.getElementById('highlightInput');
+    if (hi && typeof state.highlight !== 'undefined') hi.value = state.highlight;
+
+    var ta = document.getElementById('peopleText');
+    if (ta && state.peopleText) ta.value = state.peopleText;
+  }
+
+  function fireRegenerate() {
+    if (!hasGenerated || !outputSelected) return;
+    parent.postMessage({ pluginMessage: { type: 'regenerate', state: getStateFromForm() } }, '*');
+  }
+
+  Promise.all([
+    customElements.whenDefined('fig-group'),
+    customElements.whenDefined('fig-header'),
+    customElements.whenDefined('fig-footer'),
+    customElements.whenDefined('fig-field'),
+    customElements.whenDefined('fig-input-number'),
+    customElements.whenDefined('fig-dropdown'),
+    customElements.whenDefined('fig-button'),
+  ]).then(function () {
+
+    document.getElementById('run').addEventListener('click', function () {
+      hasGenerated = true;
+      parent.postMessage({ pluginMessage: { type: 'generate', state: getStateFromForm() } }, '*');
+    });
+
+    // FigUI3 dropdowns and number inputs → commit-fire
+    document.querySelectorAll('fig-dropdown, fig-input-number').forEach(function (el) {
+      el.addEventListener('change', fireRegenerate);
+    });
+
+    // Native textarea: fire on blur (commit-fire, not live)
+    var ta = document.getElementById('peopleText');
+    if (ta) ta.addEventListener('blur', fireRegenerate);
+
+    // Native text input for highlight: fire on blur
+    var hi = document.getElementById('highlightInput');
+    if (hi) hi.addEventListener('blur', fireRegenerate);
+
+  });
+
+  window.onmessage = function (event) {
+    var msg = event.data.pluginMessage;
+    if (!msg) return;
+    if (msg.type === 'loadState') { setStateInForm(msg.state); hasGenerated = true; }
+    if (msg.type === 'outputSelected') { outputSelected = !!msg.selected; }
+  };
 </script>
 
 </body>

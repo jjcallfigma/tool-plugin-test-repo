@@ -7,12 +7,16 @@ alwaysApply: false
 
 # manifest.json rules
 
+## Stable harness file
+
+`template/manifest.json` is imported into Figma once as **GenTool Comparison**. It is stable comparison infrastructure. Do not edit it during tool-generation runs.
+
 ## Required shape
 
 ```json
 {
-  "name": "Tool name (user-facing, plain English)",
-  "id": "kebab-case-unique-id",
+  "name": "GenTool Comparison",
+  "id": "gentool-comparison",
   "api": "1.0.0",
   "main": "src/code.js",
   "ui": "src/ui.html",
@@ -21,20 +25,25 @@ alwaysApply: false
     "allowedDomains": ["*"],
     "reasoning": "Public open HTTP APIs only; no API keys in generated tools."
   },
-  "documentAccess": "dynamic-page"
+  "documentAccess": "dynamic-page",
+  "relaunchButtons": [
+    { "command": "regenerate", "name": "Regenerate", "multipleSelection": false },
+    { "command": "edit", "name": "Edit", "multipleSelection": false }
+  ]
 }
 ```
 
 ## Field rules
 
-- **`name`** is user-facing. Use natural English. No "Plugin" suffix. Example: `"Bento Grid"`, not `"Bento Grid Plugin"`.
-- **`id`** is internal. Kebab-case, unique. Example: `"bento-grid-tool"`.
+- **`name`** stays `"GenTool Comparison"` for the imported dev entry. Do not rename it per generated tool.
+- **`id`** stays `"gentool-comparison"` so Figma keeps the same development plugin.
 - **`main`** points to the compiled JS, which lives next to `code.ts`. `npx tsc` produces `src/code.js` from `src/code.ts`.
 - **`networkAccess`** is pre-set to `["*"]` for public open APIs (no API keys). **Do not change** per generation run. See `docs/10-network-open-apis.md`. If this file changes in git, the human re-imports the dev plugin once in Figma.
 - **`documentAccess: "dynamic-page"`** allows the plugin to access pages other than the current one. Keep this default. Sandbox code must use `figma.getNodeByIdAsync`, not `figma.getNodeById`, when resolving ids from `toolState` (see `docs/07-plugin-practices.md`).
+- **`relaunchButtons`** are pre-declared and required by `setRelaunchData`. Use only the existing commands: `regenerate` and `edit`.
 
 ## Do not add
 
 - No `parameters` block — V1 tools don't use prompted parameters.
 - No `commands` array unless the tool genuinely has multiple distinct actions (e.g., "Cleanup duplicates" + "Cleanup unused styles" in one plugin). Single-purpose tools omit `commands`.
-- No `relaunchButtons` — handle re-opening via the standard plugin run flow.
+- No per-tool manifest churn. Generated tools live in `src/code.ts` and `src/ui.template.html`.

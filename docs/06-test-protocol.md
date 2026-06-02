@@ -1,6 +1,8 @@
 # Dry-run test protocol
 
-Before running the live comparison against Assistant, pressure-test Cursor a few times against the Bento Grid prompt. Goal: make sure the rules and PropsKit reference are dialed in. If the same thing fails across multiple runs, fix the rules. If different things fail each run, that's variance, accept it and move on.
+Use this when the Cursor kit starts failing or you intentionally want to tune the rules. It is not required for the lightweight live comparison against Assistant.
+
+Goal: pressure-test Cursor a few times against the Bento Grid prompt. If the same thing fails across multiple runs, fix the rules. If different things fail each run, that's variance, accept it and move on.
 
 ## The drill (per run)
 

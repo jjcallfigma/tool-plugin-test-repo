@@ -14,7 +14,7 @@ When the user's message **starts with** (case-insensitive):
 
 ## What to do immediately
 
-1. Read **`AGENTS.md`** and follow its **"Read these BEFORE writing any code"** order (`docs/07`, `docs/09`, `docs/08`, `docs/02`, `docs/10` if the prompt needs public HTTP data, reference `code.ts`, etc.).
+1. Read **`AGENTS.md`** and follow its **"Hot path before writing code"** order. Keep deep docs conditional: `docs/08` for FigUI3/color-picker troubleshooting, `docs/10` only for public HTTP data, `docs/03`/`04`/`06` as references.
 2. **Identify archetype** from the prompt: Generator vs Action.
 3. **Build in `template/` only** — overwrite `src/code.ts` and `src/ui.template.html`, then run `npm run build`. Start UI from **`scaffold/src/ui.template.html`**. Use **`regenerate(state, 'create' | 'update')` + output targeting** from `docs/07-plugin-practices.md` (Generate must not delete existing tool outputs). If the prompt needs colors, read **`docs/08-figui3-ui.md > Color picker`**.
 4. **Do not** touch `manifest.json`, `package.json`, `tsconfig.json`, or `scripts/`.

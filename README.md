@@ -2,7 +2,7 @@
 
 ![Bento Grid tool generated from a single prompt: a 240px panel with Layout and Style & content controls on the left, and an asymmetric bento grid of marketing cards on the canvas.](docs/images/bento-grid-example.png)
 
-This repo is a harness for generating Figma plugins from a single prompt. The interesting part isn't the plugin output — it's the **layered context system** that pushes a general-purpose coding model toward a specific, opinionated style of tool.
+This repo is a harness for generating Figma plugins from a single prompt. The interesting part isn't the plugin output — it's the **layered context system** that pushes a general-purpose coding model toward a specific, opinionated style of tool without making every run read the whole repair manual.
 
 The goal: take a one-line prompt like *"Create a custom tool that swaps Lorem Ipsum with real-looking copy"* and get back a working, polished Figma plugin that matches a strict house style — every time, without back-and-forth.
 
@@ -19,32 +19,32 @@ The output quality comes from stacking three layers of guidance: **always-on rul
 | `00-philosophy.mdc` | Every prompt | Six hard rules every tool must obey (one-shot output, explicit first run, persistent controls, etc.) + forbidden words |
 | `05-custom-tool-trigger.mdc` | Every prompt | Maps the opener *"Create a custom tool…"* to a specific workflow |
 | `10-plugin-code.mdc` | Editing `code.ts` | Required sandbox shape (typed messages, `regenerate(state, mode)`, output targeting) |
-| `11-network-open-apis.mdc` | Editing `code.ts` | Allowed vs forbidden network patterns |
+| `11-network-open-apis.mdc` | Prompts needing live public data | Allowed vs forbidden network patterns |
 | `20-ui-html.mdc` | Editing `ui.template.html` / `ui.html` | FigUI3 init, commit-fire, footer spec |
 | `30-manifest.mdc` | Editing `manifest.json` | "Don't touch this" enforcement |
 
-Rules are short because they fire constantly. They tell the model **what is non-negotiable**, not how to do it. The "how" lives in docs.
+Rules are short because they either fire constantly or load for a clear situation. They tell the model **what is non-negotiable**, not how to do it. The "how" lives in docs.
 
 **Why this matters:** without rules, the model defaults to plausible-but-wrong patterns (live-drag updates, modals for errors, auto-running on plugin open, the word "plugin" in UI strings). The model isn't wrong by default — it just has no reason to know our house style. Rules give it that reason on every turn.
 
 ### 2. Docs — deep reference, loaded on demand
 
-`docs/*.md` files the rules and `AGENTS.md` point to. The model reads them when it needs the full picture.
+`docs/*.md` files the rules and `AGENTS.md` point to. The model reads the short hot path first, then pulls the deeper docs only when it needs the full picture.
 
 | Doc | What it covers |
 |---|---|
 | `01-what-is-a-good-tool.md` | The bar — what makes a tool feel like a GenTool |
 | `02-propskit-reference.md` | Allowed control catalog (FigUI3 components) |
-| `03-figma-plugin-basics.md` | Plugin API quickstart |
-| `04-glossary.md` | Forbidden words in UI strings |
+| `03-figma-plugin-basics.md` | Plugin API quickstart, reference only |
+| `04-glossary.md` | Forbidden words in UI strings, reference only |
 | `07-plugin-practices.md` | The complete practices checklist — state, relaunch, message passing, output targeting, fonts, colors, errors |
-| `08-figui3-ui.md` | FigUI3 setup, bundling, panel layout, spacing, color picker, auto-resize |
+| `08-figui3-ui.md` | FigUI3 setup, bundling, panel layout, spacing, color picker, auto-resize. Repair manual, not hot-path reading |
 | `09-plugin-structure-and-reset.md` | Required file structure and reset workflow |
-| `10-network-open-apis.md` | Public `fetch` patterns, no API keys |
+| `10-network-open-apis.md` | Public `fetch` patterns, no API keys. Read only for live data prompts |
 
 Docs are long, opinionated, and include working code blocks. Rules say *"use commit-fire, not live updates"*; the docs explain why, show the binding pattern, and list the gotchas that caused us to write the rule in the first place.
 
-**Why this matters:** the model can't fit every detail in its working memory on every turn. Docs are the deep reference it pulls in when a rule says *"see `docs/07-plugin-practices.md > Output targeting`"*. The rule fires the lookup; the doc supplies the answer.
+**Why this matters:** the model can't fit every detail in its working memory on every turn. The hot path points it at the reset workflow, matching reference code, scaffold UI, PropsKit catalog, and Generator output targeting. The deeper docs stay available when something is genuinely relevant.
 
 ### 3. Skills — task-specific recipes, opt-in
 
@@ -65,7 +65,7 @@ The color picker skill, for example, exists because FigUI3's color popover break
 
 ### `AGENTS.md` — the project briefing
 
-Cursor reads `AGENTS.md` at chat start. It's the entry point: tells the model what this workspace is, what the trigger phrase means, **what to read before writing code** (in order), and what the file structure looks like.
+Cursor reads `AGENTS.md` at chat start. It's the entry point: tells the model what this workspace is, what the trigger phrase means, the **hot path before writing code**, and which deep docs are conditional references.
 
 Without `AGENTS.md`, even with rules and docs sitting in the repo, the model has no map. It might find the right doc eventually — or it might not. `AGENTS.md` removes the chance.
 
@@ -85,7 +85,7 @@ Docs tell the model *what* to do. References show *how it looks when done right*
 | `AGENTS.md` | The map | Model doesn't know where to look; reads the wrong files in the wrong order |
 | Reference impls | Pattern to match against | Model assembles from principles, which is slower and more error-prone |
 
-The output quality is a function of how well these layers cover the surface area of the task. Every time a generation goes sideways, the fix is: **which layer should have caught this?** If it's a one-off, add it to a rule. If it has nuance, write a doc. If it's a self-contained recipe, make it a skill. If it's structural, update `AGENTS.md`.
+The output quality is a function of how well these layers cover the surface area of the task without bloating the default context. Every time a generation goes sideways, the fix is: **which layer should have caught this?** If it's a one-off, add it to a rule. If it has nuance, write a doc. If it's a self-contained recipe, make it a skill. If it's structural, update `AGENTS.md`.
 
 ## How to extend the system
 
@@ -132,4 +132,4 @@ Then in Figma Desktop: **Plugins → Development → Import plugin from manifest
 cd template && npm run reset     # wipes src/ back to scaffold
 ```
 
-Then open a fresh Cursor chat and paste a prompt starting with **`Create a custom tool that…`**. Cursor reads `AGENTS.md`, pulls the right rules and docs, writes `code.ts` + `ui.template.html`, runs the build, and tells you to re-run the tool in Figma.
+Then open a fresh Cursor chat and paste a prompt starting with **`Create a custom tool that...`**. Cursor reads `AGENTS.md`, follows the hot path, pulls conditional docs only when needed, writes `code.ts` + `ui.template.html`, runs the build, and tells you to re-run the tool in Figma.

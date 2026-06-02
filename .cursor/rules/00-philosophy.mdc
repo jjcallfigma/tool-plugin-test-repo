@@ -19,7 +19,7 @@ You are building a Figma plugin that should feel and behave like a **GenTool**: 
 ## Glossary you must respect in UI strings
 
 The user sees `tool`. Never use these words in any user-facing string:
-`plugin`, `Code Object`, `defineProperties`, `Sinatra`, `manifest`, `widget`.
+`plugin`, `Code Object`, `defineProperties`, `Sinatra`, `manifest`, `widget`, `extension`.
 
 ## Structure expectation
 
@@ -64,4 +64,4 @@ If the prompt asks for keys, OAuth, or login, simplify to the closest single-scr
 - [ ] No forbidden words in any UI string
 - [ ] If `<fig-input-color>` is used: required attrs, color-picker CSS block, popover resize JS (`docs/08-figui3-ui.md > Color picker`)
 - [ ] **Output targeting:** Generate adds without deleting other outputs; control changes update selected frame only (`docs/07-plugin-practices.md > Output targeting`)
-- [ ] User sees output within 2 seconds of opening
+- [ ] User sees output within 2 seconds of clicking **Generate** or **Apply**

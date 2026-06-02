@@ -4,7 +4,7 @@ PropsKit is the V1 GenTools control system. Every tool's UI uses PropsKit-styled
 
 **In this workspace, PropsKit is implemented with [FigUI3](https://rog.ie/figui3) web components** (`@rogieking/figui3`), not hand-rolled HTML classes. Read **`docs/08-figui3-ui.md`** for the full setup (bundling, init, panel layout, spacing). The canonical live control reference is the **[FigUI3 Playground](https://rog.ie/figui3)**.
 
-The working template UI is `template/src/ui.template.html`. Edit that file, run `npm run bundle-ui`, never hand-edit `ui.html`.
+The working UI shell is `scaffold/src/ui.template.html`. Generated runs edit `template/src/ui.template.html`, run `npm run bundle-ui`, and never hand-edit `ui.html`.
 
 ## Visual language
 
@@ -218,4 +218,3 @@ This is non-negotiable. V1 GenTools does not live-update during interaction.
 | 2D/3D position | paired `fig-input-number` |
 | Secondary action | `fig-button` in `fig-footer` |
 | Drag something on canvas | on-canvas handle (rare) |
-

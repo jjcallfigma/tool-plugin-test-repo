@@ -1,8 +1,5 @@
 ---
-description: Public open API fetch rules for GenTool comparison plugins. Auto-attaches when editing sandbox code.
-globs:
-  - "**/code.ts"
-  - "template/src/code.ts"
+description: Public open API fetch rules for GenTool comparison plugins. Use only when a prompt needs live public HTTP data.
 alwaysApply: false
 ---
 

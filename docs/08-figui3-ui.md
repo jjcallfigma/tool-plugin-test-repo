@@ -4,7 +4,7 @@ Every GenTool panel uses **PropsKit** controls. In this workspace, PropsKit is i
 
 The canonical live reference is the **[FigUI3 Playground](https://rog.ie/figui3)**. For panel layout and spacing, match the **[Generative tools effects panel](https://staging.figma.com/design/ChG6473qlBtfrv8VYx1jaR/Generative-tools-effects?node-id=17850-75051)** (240px wide, tight section headers, 32px field rows).
 
-The working reference implementation is `template/src/ui.template.html` (Bento Grid tool).
+The working UI shell is `scaffold/src/ui.template.html`. Start from that scaffold each run, then use this doc only when you need the rationale or a troubleshooting detail.
 
 ---
 

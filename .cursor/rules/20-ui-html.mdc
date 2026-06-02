@@ -22,15 +22,15 @@ After UI changes: `npm run bundle-ui` (or `npm run build`), then re-run in Figma
 
 ## Required behavior
 
-1. **Wait for custom elements before init.** Use `Promise.all([customElements.whenDefined('fig-…'), …]).then(init)`. Never rely on `DOMContentLoaded` alone — FigUI3 may not be registered yet.
+1. **Wait for custom elements before init.** Use `Promise.all([customElements.whenDefined('fig-...'), ...]).then(init)`. Never rely on `DOMContentLoaded` alone because FigUI3 may not be registered yet.
 2. **Explicit first run (Generators).** Primary **Generate** footer button — no canvas output on plugin open. After first run, controls commit-fire `regenerate` **only when a tool output frame is selected** (`outputSelected`). **Generate** always posts `{ type: 'generate' }`; the sandbox adds a new frame when nothing is selected and **must not delete** existing tool outputs. Actions wait for **Apply**.
-3. **FigUI3 components only.** Use `<fig-field>`, `<fig-dropdown>`, `<fig-field-slider>`, etc. Do not use raw HTML with `.propskit-*` classes, shadcn, MUI, or Tailwind.
+3. **FigUI3 components only.** Use `<fig-field>`, `<fig-dropdown>`, `<fig-slider>`, etc. Do not use raw HTML with `.propskit-*` classes, shadcn, MUI, or Tailwind. Do not use `<fig-field-slider>`; it is not registered in the bundled FigUI3 build.
 4. **Commit-fire.** Bind `change` on controls, never `input` on sliders or text fields.
 5. **Receive `loadState`** and rehydrate via `readValue` / `writeValue` helpers (see `docs/08-figui3-ui.md`).
-6. **Panel layout.** Use `<fig-group>`, `<fig-header borderless>`, `<fig-footer borderless>`. Copy the spacing override CSS block from `docs/08-figui3-ui.md` every time (includes color-picker fixes — **do not strip** when the tool has colors).
+6. **Panel layout.** Use `<fig-group>`, `<fig-header borderless>`, `<fig-footer borderless>`. Preserve the spacing override CSS block from `scaffold/src/ui.template.html` every time. It includes color-picker fixes, so do not strip it when the tool has colors.
 7. **Color picker.** If the tool uses `<fig-input-color>`, use `text="true" alpha="true" picker="figma"`. Preserve the scaffold's `dialog.fig-fill-picker-dialog` CSS and popover resize JS. Read **`docs/08-figui3-ui.md > Color picker`**. Never add `min-width` or `width: 100%` on `.fig-fill-picker-input-mode`.
 8. **`figma.showUI({ width: 240, themeColors: true, height: … })`** in `code.ts`.
-9. **No forbidden words** in UI strings: `plugin`, `Code Object`, `defineProperties`, `Sinatra`, `manifest`, `widget`.
+9. **No forbidden words** in UI strings: `plugin`, `Code Object`, `defineProperties`, `Sinatra`, `manifest`, `widget`, `extension`.
 
 ## FigUI3 must be inlined
 
