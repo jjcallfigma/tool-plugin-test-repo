@@ -2,6 +2,8 @@
 
 Use this when you want a **fair generation test**: wipe the last tool, paste a new prompt, see what Cursor builds from docs + rules alone.
 
+For **many real plugins** (unique manifests, side by side in Figma), use the factory instead: **`docs/11-plugin-factory.md`** (`npm run new-plugin -- <slug>`).
+
 ---
 
 ## Do not wipe the whole `template/` folder

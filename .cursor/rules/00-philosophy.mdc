@@ -23,9 +23,11 @@ The user sees `tool`. Never use these words in any user-facing string:
 
 ## Structure expectation
 
+Resolve **`{pluginRoot}`** from `plugins/.active` (see `AGENTS.md` and `docs/11-plugin-factory.md`). Default comparison target is `template/`; factory targets are `plugins/<slug>/`.
+
 ```
-template/
-├── manifest.json           ← DO NOT TOUCH (stable, imported into Figma once)
+{pluginRoot}/
+├── manifest.json           ← DO NOT TOUCH during generation
 ├── package.json            ← DO NOT TOUCH (FigUI3 + bundle scripts)
 ├── tsconfig.json           ← DO NOT TOUCH
 ├── scripts/bundle-ui.mjs   ← DO NOT TOUCH

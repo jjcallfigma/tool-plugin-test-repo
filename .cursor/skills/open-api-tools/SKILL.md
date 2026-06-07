@@ -1,13 +1,13 @@
 ---
 name: open-api-tools
-description: Build or review GenTool comparison plugins that call public open HTTP APIs (no API keys). Use when a tool prompt needs live JSON/data from the internet, fetch in code.ts, or network errors in Figma dev plugins.
+description: Build or review GenTool-style plugins (template/ or plugins/<slug>/) that call public open HTTP APIs (no API keys). Use when a tool prompt needs live JSON/data from the internet, fetch in code.ts, or network errors in Figma dev plugins.
 ---
 
 # Open API tools (this workspace)
 
 ## Manifest
 
-`template/manifest.json` already sets `networkAccess.allowedDomains` to `["*"]`. **Do not edit the manifest** during generation. Re-import the dev plugin in Figma after manifest changes land in git.
+Each plugin manifest (`template/manifest.json` or `plugins/<slug>/manifest.json`) already sets `networkAccess.allowedDomains` to `["*"]`. **Do not edit the manifest** during generation. Re-import the dev plugin in Figma after manifest changes land in git.
 
 ## Policy (V1)
 

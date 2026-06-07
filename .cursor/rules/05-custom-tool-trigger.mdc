@@ -14,16 +14,16 @@ When the user's message **starts with** (case-insensitive):
 
 ## What to do immediately
 
-1. Read **`AGENTS.md`** and follow its **"Hot path before writing code"** order. Keep deep docs conditional: `docs/08` for FigUI3/color-picker troubleshooting, `docs/10` only for public HTTP data, `docs/03`/`04`/`06` as references.
+1. Read **`AGENTS.md`** and follow its **"Hot path before writing code"** order — especially **Active plugin target** (`plugins/.active` → `{pluginRoot}`). Factory workflow: **`docs/11-plugin-factory.md`**. Keep deep docs conditional: `docs/08` for FigUI3/color-picker troubleshooting, `docs/10` only for public HTTP data, `docs/03`/`04`/`06` as references.
 2. **Identify archetype** from the prompt: Generator vs Action.
-3. **Build in `template/` only** — overwrite `src/code.ts` and `src/ui.template.html`, then run `npm run build`. Start UI from **`scaffold/src/ui.template.html`**. Use **`regenerate(state, 'create' | 'update')` + output targeting** from `docs/07-plugin-practices.md` (Generate must not delete existing tool outputs). If the prompt needs colors, read **`docs/08-figui3-ui.md > Color picker`**.
+3. **Build in `{pluginRoot}` only** — overwrite `src/code.ts` and `src/ui.template.html`, then run `npm run build` inside that folder. Start UI from **`scaffold/src/ui.template.html`**. Use **`regenerate(state, 'create' | 'update')` + output targeting** from `docs/07-plugin-practices.md` (Generate must not delete existing tool outputs). If the prompt needs colors, read **`docs/08-figui3-ui.md > Color picker`**.
 4. **Do not** touch `manifest.json`, `package.json`, `tsconfig.json`, or `scripts/`.
 5. **Do not** ask clarifying questions unless the prompt is internally contradictory. Note assumptions in a comment at the top of `code.ts`.
 6. **Do not** auto-generate canvas output on plugin open. Generators use an explicit **Generate** footer button first.
 
 ## What you are building
 
-A real Figma plugin in `template/` that mimics a GenTool: FigUI3 / PropsKit UI, commit-fire controls, persistence on the node (Generators), relaunch buttons, 240px panel.
+A real Figma plugin in `{pluginRoot}` (`template/` or `plugins/<slug>/`) that mimics a GenTool: FigUI3 / PropsKit UI, commit-fire controls, persistence on the node (Generators), relaunch buttons, 240px panel.
 
 ## Not a trigger
 

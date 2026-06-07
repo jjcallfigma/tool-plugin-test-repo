@@ -1,6 +1,6 @@
 ---
 name: color-picker-ui
-description: Build or review fig-input-color in GenTool comparison plugins. Use when a tool prompt needs a color control, fig-input-color markup, fill-picker popover layout, or color picker CSS/resize fixes in ui.template.html.
+description: Build or review fig-input-color in GenTool-style plugins (template/ or plugins/<slug>/). Use when a tool prompt needs a color control, fig-input-color markup, fill-picker popover layout, or color picker CSS/resize fixes in ui.template.html.
 ---
 
 # Color picker UI (this workspace)
@@ -24,7 +24,7 @@ After `npm run reset`, `scaffold/src/ui.template.html` ships:
 1. **CSS block** — all `dialog.fig-fill-picker-dialog …` rules in the second `<style>` section
 2. **JS** — `measurePanelHeight()`, `reportPanelHeight()`, `watchColorPickerDialog()`
 
-Copy these into every generated `template/src/ui.template.html`. Read **`docs/08-figui3-ui.md > Color picker`** for why each rule exists.
+Copy these into every generated `{pluginRoot}/src/ui.template.html`. Read **`docs/08-figui3-ui.md > Color picker`** for why each rule exists.
 
 ## Init
 

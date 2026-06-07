@@ -1,4 +1,7 @@
 node_modules/
 *.js
 !template/src/ui.html
+!plugins/*/src/ui.html
+plugins/.active
+plugins/*/node_modules/
 .DS_Store

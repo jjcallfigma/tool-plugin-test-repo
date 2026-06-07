@@ -52,6 +52,7 @@ Docs are long, opinionated, and include working code blocks. Rules say *"use com
 
 | Skill | Triggers when |
 |---|---|
+| `plugin-factory` | Create/switch plugin folders, many plugins, manifest import path |
 | `color-picker-ui` | Tool prompt needs a color control (`fig-input-color`) |
 | `open-api-tools` | Tool prompt needs live data from a public HTTP API |
 
@@ -110,7 +111,9 @@ The system is designed to absorb fixes without bloating any single layer. Rules 
 ├── docs/                      ← deep reference, cited by rules
 ├── reference/                 ← worked example tools (Generator + Action)
 ├── scaffold/                  ← empty starting point for each test run
-└── template/                  ← the actual plugin Figma imports
+├── scripts/                   ← plugin factory (new-plugin, use-plugin, …)
+├── plugins/<slug>/            ← one folder per real plugin (unique manifest)
+└── template/                  ← comparison harness (single stable manifest)
     └── src/
         ├── code.ts            ← overwritten on each generation
         └── ui.template.html   ← overwritten on each generation
@@ -133,3 +136,18 @@ cd template && npm run reset     # wipes src/ back to scaffold
 ```
 
 Then open a fresh Cursor chat and paste a prompt starting with **`Create a custom tool that...`**. Cursor reads `AGENTS.md`, follows the hot path, pulls conditional docs only when needed, writes `code.ts` + `ui.template.html`, runs the build, and tells you to re-run the tool in Figma.
+
+## Plugin factory (many real plugins)
+
+When you want to keep multiple tools — not just reset the comparison harness:
+
+```bash
+npm run new-plugin -- org-chart              # creates plugins/org-chart/, sets active
+npm run use-plugin -- org-chart              # switch active target for Cursor
+npm run list-plugins                         # see all plugins
+npm run use-plugin -- comparison             # back to template/
+```
+
+Import each plugin once in Figma: **Plugins → Development → Import plugin from manifest** → `plugins/<slug>/manifest.json`.
+
+Full workflow: **`docs/11-plugin-factory.md`**. Cursor checks `plugins/.active` and writes to the matching folder.

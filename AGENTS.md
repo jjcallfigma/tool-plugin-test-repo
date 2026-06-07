@@ -4,22 +4,36 @@ You are inside a workspace built to fairly compare **Cursor + Claude building a 
 
 ## Trigger phrase
 
-When the user message **starts with** `Create a custom tool` (any casing), you are in **tool-generation mode**. Build a real Figma plugin in `template/` that mimics the shape and feel of a GenTool. Follow everything below — do not ask clarifying questions unless the prompt contradicts itself.
+When the user message **starts with** `Create a custom tool` (any casing), you are in **tool-generation mode**. Build a real Figma plugin in the **active plugin folder** that mimics the shape and feel of a GenTool. Follow everything below — do not ask clarifying questions unless the prompt contradicts itself.
 
 This mirrors how the user starts prompts in the Figma Assistant environment. The opener is part of the test; the rest of the prompt describes the tool.
+
+## Active plugin target
+
+Resolve where to write **before** editing source files:
+
+| `plugins/.active` | Write to | Figma manifest |
+|---|---|---|
+| Missing (comparison mode) | `template/src/` | `template/manifest.json` |
+| `<slug>` (factory mode) | `plugins/<slug>/src/` | `plugins/<slug>/manifest.json` |
+
+Check `plugins/.active` at generation time. Factory workflow: **`docs/11-plugin-factory.md`**. Human creates plugins with `npm run new-plugin -- <slug>` at repo root.
+
+Throughout this file, **`{pluginRoot}`** means the resolved folder (`template/` or `plugins/<slug>/`). Only overwrite `{pluginRoot}/src/code.ts` and `{pluginRoot}/src/ui.template.html`. Run `npm run build` inside `{pluginRoot}`.
 
 ## Hot path before writing code
 
 Read only the context needed to generate the tool:
 
-1. **`.cursor/rules/00-philosophy.mdc`** — always-on contract
-2. **`docs/09-plugin-structure-and-reset.md`** — files you may edit and reset flow
-3. **Matching reference `code.ts`**:
+1. **Resolve `{pluginRoot}`** — read `plugins/.active`; see **Active plugin target** above
+2. **`.cursor/rules/00-philosophy.mdc`** — always-on contract
+3. **`docs/09-plugin-structure-and-reset.md`** — files you may edit and reset flow
+4. **Matching reference `code.ts`**:
    - `reference/01-generator-color-swatch/code.ts` for Generators
    - `reference/02-action-layer-renamer/code.ts` for Actions
-4. **`scaffold/src/ui.template.html`** — UI shell, spacing CSS, auto-resize, color-picker wiring
-5. **`docs/02-propskit-reference.md`** — allowed FigUI3 controls
-6. **`docs/07-plugin-practices.md > Output targeting`** for Generators
+5. **`scaffold/src/ui.template.html`** — UI shell, spacing CSS, auto-resize, color-picker wiring
+6. **`docs/02-propskit-reference.md`** — allowed FigUI3 controls
+7. **`docs/07-plugin-practices.md > Output targeting`** for Generators
 
 Conditional reads only:
 
@@ -39,11 +53,13 @@ cd template && npm run reset
 
 Then open a **fresh chat** and paste the prompt. See **`docs/09-plugin-structure-and-reset.md`**. Do **not** delete `template/` or `node_modules/`.
 
-## The template structure
+## Plugin folder structure
+
+Each plugin folder (`template/` or `plugins/<slug>/`) shares the same shape:
 
 ```
-template/
-├── manifest.json           ← DO NOT TOUCH
+{pluginRoot}/
+├── manifest.json           ← DO NOT TOUCH during generation (set at create / comparison import)
 ├── package.json            ← DO NOT TOUCH (FigUI3 + build/reset scripts)
 ├── tsconfig.json           ← DO NOT TOUCH
 ├── scripts/
@@ -54,6 +70,9 @@ template/
     ├── ui.template.html    ← OVERWRITE each run (UI source)
     ├── ui.html             ← GENERATED — do not edit by hand
     └── vendor/             ← FigUI3 copies (from npm install)
+
+plugins/<slug>/             ← factory: one folder per real plugin (unique manifest)
+template/                   ← comparison harness (single stable manifest)
 
 scaffold/src/               ← committed empty starting point; copied by npm run reset
     ├── code.ts
@@ -69,14 +88,14 @@ scaffold/src/               ← committed empty starting point; copied by npm ru
    - Action: operates on selection, one-shot, no persistent state
 2. **Read the matching reference `code.ts`** end to end. Note every practice.
 3. **Read `scaffold/src/ui.template.html`** for UI shell patterns. Use `docs/08-figui3-ui.md` only when the scaffold or control behavior needs deeper explanation.
-4. **Overwrite `template/src/code.ts`** following the same pattern. Include every applicable practice from `docs/07-plugin-practices.md` (especially **Output targeting** — read `reference/01-generator-color-swatch/code.ts`):
+4. **Overwrite `{pluginRoot}/src/code.ts`** following the same pattern. Include every applicable practice from `docs/07-plugin-practices.md` (especially **Output targeting** — read `reference/01-generator-color-swatch/code.ts`):
    - For Generators: state types, `regenerate(state, 'create' | 'update')`, output targeting (`getSelectedToolFrame`, `outputSelected`, **create must not remove other outputs**), setPluginData, setRelaunchData, selectionchange, figma.command handling, try/catch — see `docs/07-plugin-practices.md > Output targeting` and `reference/01-generator-color-swatch/code.ts`
    - If `toolState` stores node ids: `await figma.getNodeByIdAsync` only (`getNodeById` throws with template `documentAccess: "dynamic-page"`)
    - For Actions: selection handling, figma.notify, setRelaunchData, no persistent state
    - If the prompt needs live public data: `fetch` in `code.ts` per `docs/10-network-open-apis.md` (no API keys; do not edit manifest)
-5. **Overwrite `template/src/ui.template.html`** from the scaffold pattern — preserve the FigUI3 placeholders (`<!-- FIGUI3_CSS -->`, `<!-- FIGUI3_JS -->`), panel spacing CSS, color-picker CSS block, and **`measurePanelHeight` / `watchColorPickerDialog`**. Use **only** FigUI3 web components from `docs/02-propskit-reference.md`. If the tool uses `<fig-input-color>`, read **`docs/08-figui3-ui.md > Color picker`** and use `text="true" alpha="true" picker="figma"`.
-6. **Run `npm run bundle-ui`** (or `npm run build`) to regenerate `ui.html`.
-7. **Tell the user** to re-run the plugin in Figma.
+5. **Overwrite `{pluginRoot}/src/ui.template.html`** from the scaffold pattern — preserve the FigUI3 placeholders (`<!-- FIGUI3_CSS -->`, `<!-- FIGUI3_JS -->`), panel spacing CSS, color-picker CSS block, and **`measurePanelHeight` / `watchColorPickerDialog`**. Use **only** FigUI3 web components from `docs/02-propskit-reference.md`. If the tool uses `<fig-input-color>`, read **`docs/08-figui3-ui.md > Color picker`** and use `text="true" alpha="true" picker="figma"`.
+6. **Run `npm run build`** inside `{pluginRoot}` to regenerate `ui.html` and `code.js`.
+7. **Tell the user** to re-run the plugin in Figma (import `{pluginRoot}/manifest.json` once per plugin if factory mode).
 
 ## What you DO NOT
 

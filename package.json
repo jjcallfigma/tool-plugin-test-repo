@@ -1,0 +1,11 @@
+{
+  "name": "figma-plugin-factory",
+  "private": true,
+  "description": "GenTool comparison harness and Figma plugin factory",
+  "scripts": {
+    "new-plugin": "node scripts/new-plugin.mjs",
+    "use-plugin": "node scripts/use-plugin.mjs",
+    "list-plugins": "node scripts/list-plugins.mjs",
+    "plugin-root": "node scripts/resolve-plugin-root.mjs"
+  }
+}

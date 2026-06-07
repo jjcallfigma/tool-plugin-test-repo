@@ -7,9 +7,12 @@ alwaysApply: false
 
 # manifest.json rules
 
-## Stable harness file
+## Stable manifest files
 
-`template/manifest.json` is imported into Figma once as **GenTool Comparison**. It is stable comparison infrastructure. Do not edit it during tool-generation runs.
+- **Comparison:** `template/manifest.json` — imported once as **GenTool Comparison**. Do not edit during generation runs.
+- **Factory:** `plugins/<slug>/manifest.json` — created by `npm run new-plugin` with a unique `id`. Do not edit during generation runs.
+
+See **`docs/11-plugin-factory.md`** for the multi-plugin workflow.
 
 ## Required shape
 
