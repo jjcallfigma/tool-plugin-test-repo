@@ -2,15 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<title>GenTool Comparison</title>
+<title>CSV to Lineup</title>
 <style>
 <!-- FIGUI3_CSS -->
 </style>
 <style>
-  /* FigUI3 vendor CSS sets html { height: 100% } which pins the document to
-     the iframe and breaks shrink-to-fit. Override to auto so the
-     ResizeObserver on #plugin-root sees real size changes.
-     See docs/08-figui3-ui.md > Auto-resize. */
   html, body {
     margin: 0;
     padding: 0;
@@ -26,9 +22,6 @@
     height: auto;
   }
 
-  /* Generative tools panel spacing — copy with tool UI; see docs/08-figui3-ui.md */
-  /* Every section reserves 8px above and below its content so dividers
-     (between sections, above the footer) have symmetric breathing room. */
   fig-group {
     margin-bottom: 0;
     padding-bottom: var(--spacer-2);
@@ -39,8 +32,6 @@
     padding-top: var(--spacer-2);
   }
 
-  /* First section sits 12px below the panel top — gives the first title room
-     to breathe and matches the visual weight of later section dividers. */
   body > fig-group:first-of-type,
   #plugin-root > fig-group:first-of-type {
     padding-top: 12px;
@@ -67,12 +58,6 @@
     padding-bottom: var(--spacer-1);
   }
 
-  /* Footer spec: 16px sides, 12px top/bottom, 8px between buttons.
-     ALWAYS wrap buttons in <div class="footer-actions"> so padding stays
-     identical whether there's 1 or N buttons.
-     See docs/08-figui3-ui.md > Footer spec. */
-  /* Higher specificity than vendor's `fig-footer[borderless]` (box-shadow:none).
-     Spec: 12px top + bottom, 16px sides, 8px between buttons. */
   fig-footer,
   fig-footer[borderless] {
     box-shadow: inset 0 1px 0 var(--figma-color-border);
@@ -98,10 +83,22 @@
     margin: 0;
   }
 
-  /* === Color picker (keep if the tool uses fig-input-color) ===
-     Required for Figma-style popover in 240px iframes. Do not remove or replace
-     with ad-hoc rules (no min-width on .fig-fill-picker-input-mode, no width:100%
-     on the mode dropdown). See docs/08-figui3-ui.md > Color picker. */
+  .csv-field {
+    padding: 0 var(--spacer-3) var(--spacer-1);
+  }
+
+  .csv-field fig-input-text {
+    width: 100%;
+  }
+
+  .csv-field fig-input-text textarea {
+    min-height: 96px;
+    resize: vertical;
+    font-family: var(--font-family);
+    font-size: var(--body-small-fontSize);
+    line-height: 1.35;
+  }
+
   dialog.fig-fill-picker-dialog {
     width: 240px;
     max-width: 240px;
@@ -137,8 +134,6 @@
     min-width: 0;
   }
 
-  /* Collapsible rows — animate height open/closed. The ResizeObserver on
-     #plugin-root follows each frame so the panel glides in sync. */
   .collapsible {
     display: grid;
     grid-template-rows: 1fr;
@@ -159,35 +154,101 @@
 <body>
 
 <div id="plugin-root">
-  <!-- Tool UI goes here: fig-group sections + fig-footer with Generate button.
-       Generator init: Generate → { type: 'generate' }; control change → regenerate
-       only when outputSelected (docs/07 > Output targeting). Generate must not
-       delete existing tool outputs when creating a new frame.
 
-       Generator footer pattern (always use this shape):
+  <fig-group>
+    <fig-header borderless><h3>Data</h3></fig-header>
+    <div class="csv-field">
+      <fig-input-text id="csvData" multiline="true" placeholder="artist,stage,time,day,section,image_url"></fig-input-text>
+    </div>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="autoFindImages">Auto-find images</label>
+      <fig-switch id="autoFindImages"></fig-switch>
+    </fig-field>
+  </fig-group>
 
-       <fig-footer borderless>
-         <div class="footer-actions">
-           <fig-button id="run" variant="primary">Generate</fig-button>
-         </div>
-       </fig-footer>
+  <fig-group>
+    <fig-header borderless><h3>Grid</h3></fig-header>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="columns">Columns</label>
+      <fig-input-number id="columns" value="3" min="1" max="5" steppers="true"></fig-input-number>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="gap">Gap</label>
+      <fig-slider id="gap" variant="neue" value="16" min="8" max="40" text="true" units="px" full></fig-slider>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="cardSize">Card size</label>
+      <fig-dropdown id="cardSize" value="headliner">
+        <option value="headliner">Headliner</option>
+        <option value="standard">Standard</option>
+        <option value="compact">Compact</option>
+      </fig-dropdown>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="groupBy">Group by</label>
+      <fig-dropdown id="groupBy" value="section">
+        <option value="none">None</option>
+        <option value="section">Section</option>
+        <option value="day">Day</option>
+        <option value="stage">Stage</option>
+      </fig-dropdown>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="showSectionLabels">Show section labels</label>
+      <fig-switch id="showSectionLabels" checked></fig-switch>
+    </fig-field>
+  </fig-group>
 
-       Color control (when needed):
+  <fig-group>
+    <fig-header borderless><h3>Style</h3></fig-header>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="imageTreatment">Image treatment</label>
+      <fig-dropdown id="imageTreatment" value="noir">
+        <option value="noir">Noir</option>
+        <option value="fog">Fog</option>
+        <option value="high-contrast">High contrast</option>
+        <option value="soft-grain">Soft grain</option>
+      </fig-dropdown>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="cropBias">Crop bias</label>
+      <fig-dropdown id="cropBias" value="center">
+        <option value="center">Center</option>
+        <option value="top">Top</option>
+        <option value="bottom">Bottom</option>
+      </fig-dropdown>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="grain">Grain</label>
+      <fig-slider id="grain" variant="neue" value="35" min="0" max="100" text="true" units="%" full></fig-slider>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="contrast">Contrast</label>
+      <fig-slider id="contrast" variant="neue" value="80" min="0" max="100" text="true" units="%" full></fig-slider>
+    </fig-field>
+  </fig-group>
 
-       <fig-input-color id="accent" value="#0D99FF" text="true" alpha="true" picker="figma"></fig-input-color>
+  <fig-footer borderless>
+    <div class="footer-actions">
+      <fig-button id="run" variant="primary">Generate</fig-button>
+    </div>
+  </fig-footer>
 
-       See docs/08-figui3-ui.md (Footer spec, Color picker). -->
 </div>
 
 <script>
 <!-- FIGUI3_JS -->
 </script>
 <script>
-  // Auto-resize panel to hug content. See docs/08-figui3-ui.md > Auto-resize.
-  // measurePanelHeight + watchColorPickerDialog keep the iframe tall enough when
-  // the Figma color popover extends below #plugin-root (docs/08 > Color picker).
   var lastReportedHeight = 0;
   var resizeRaf = 0;
+  var outputSelected = false;
+
+  var SAMPLE_CSV = 'artist,stage,time,day,section,image_url\n' +
+    'Tame Impala,Main Stage,10:00 PM,Friday,Headliners,\n' +
+    'Kaytranada,Redwood Stage,9:00 PM,Friday,Headliners,\n' +
+    'Bonobo,Creek Stage,11:00 PM,Friday,Headliners,\n' +
+    'Moodymann,The Grove,4:00 PM,Saturday,Redwood Stage,';
 
   function reportHeight(height) {
     var h = Math.ceil(height);
@@ -242,6 +303,108 @@
       attributeFilter: ['open'],
     });
   })();
+
+  function readValue(el) {
+    if (!el) return '';
+    if (el.tagName === 'FIG-SWITCH') return !!el.checked;
+    if (el.tagName === 'FIG-SLIDER' || el.tagName === 'FIG-INPUT-NUMBER') return Number(el.value);
+    return el.value ?? '';
+  }
+
+  function writeValue(el, value) {
+    if (!el) return;
+    if (el.tagName === 'FIG-SWITCH') {
+      el.checked = !!value;
+      return;
+    }
+    el.value = value == null ? '' : String(value);
+  }
+
+  function getStateFromForm() {
+    return {
+      csvData: String(readValue(document.getElementById('csvData')) || SAMPLE_CSV),
+      columns: Number(readValue(document.getElementById('columns')) || 3),
+      gap: Number(readValue(document.getElementById('gap')) || 16),
+      cardSize: String(readValue(document.getElementById('cardSize')) || 'headliner'),
+      groupBy: String(readValue(document.getElementById('groupBy')) || 'section'),
+      autoFindImages: !!readValue(document.getElementById('autoFindImages')),
+      imageTreatment: String(readValue(document.getElementById('imageTreatment')) || 'noir'),
+      cropBias: String(readValue(document.getElementById('cropBias')) || 'center'),
+      grain: Number(readValue(document.getElementById('grain')) || 35),
+      contrast: Number(readValue(document.getElementById('contrast')) || 80),
+      showSectionLabels: !!readValue(document.getElementById('showSectionLabels')),
+    };
+  }
+
+  function setStateInForm(state) {
+    writeValue(document.getElementById('csvData'), state.csvData || SAMPLE_CSV);
+    writeValue(document.getElementById('columns'), state.columns);
+    writeValue(document.getElementById('gap'), state.gap);
+    writeValue(document.getElementById('cardSize'), state.cardSize);
+    writeValue(document.getElementById('groupBy'), state.groupBy);
+    writeValue(document.getElementById('autoFindImages'), state.autoFindImages);
+    writeValue(document.getElementById('imageTreatment'), state.imageTreatment);
+    writeValue(document.getElementById('cropBias'), state.cropBias);
+    writeValue(document.getElementById('grain'), state.grain);
+    writeValue(document.getElementById('contrast'), state.contrast);
+    writeValue(document.getElementById('showSectionLabels'), state.showSectionLabels);
+    reportPanelHeight();
+  }
+
+  function fireRegenerate() {
+    if (!outputSelected) return;
+    parent.postMessage({ pluginMessage: { type: 'regenerate', state: getStateFromForm() } }, '*');
+  }
+
+  function bindCommitFire(el) {
+    if (!el) return;
+    el.addEventListener('change', fireRegenerate);
+  }
+
+  Promise.all([
+    customElements.whenDefined('fig-group'),
+    customElements.whenDefined('fig-field'),
+    customElements.whenDefined('fig-input-text'),
+    customElements.whenDefined('fig-input-number'),
+    customElements.whenDefined('fig-dropdown'),
+    customElements.whenDefined('fig-slider'),
+    customElements.whenDefined('fig-switch'),
+    customElements.whenDefined('fig-button'),
+    customElements.whenDefined('fig-footer'),
+  ]).then(function () {
+    writeValue(document.getElementById('csvData'), SAMPLE_CSV);
+
+    bindCommitFire(document.getElementById('csvData'));
+    bindCommitFire(document.getElementById('columns'));
+    bindCommitFire(document.getElementById('gap'));
+    bindCommitFire(document.getElementById('cardSize'));
+    bindCommitFire(document.getElementById('groupBy'));
+    bindCommitFire(document.getElementById('autoFindImages'));
+    bindCommitFire(document.getElementById('showSectionLabels'));
+    bindCommitFire(document.getElementById('imageTreatment'));
+    bindCommitFire(document.getElementById('cropBias'));
+    bindCommitFire(document.getElementById('grain'));
+    bindCommitFire(document.getElementById('contrast'));
+
+    document.getElementById('run').addEventListener('click', function () {
+      parent.postMessage({ pluginMessage: { type: 'generate', state: getStateFromForm() } }, '*');
+    });
+
+    reportPanelHeight();
+  });
+
+  window.onmessage = function (event) {
+    var msg = event.data.pluginMessage;
+    if (!msg) return;
+
+    if (msg.type === 'loadState') {
+      setStateInForm(msg.state);
+    }
+
+    if (msg.type === 'outputSelected') {
+      outputSelected = !!msg.selected;
+    }
+  };
 </script>
 
 </body>

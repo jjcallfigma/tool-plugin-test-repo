@@ -15,6 +15,6 @@
     "typescript": "^5.4.0"
   },
   "dependencies": {
-    "@rogieking/figui3": "^4.13.1"
+    "@rogieking/figui3": "^6.4.8"
   }
 }
