@@ -131,7 +131,30 @@ This is how the controls come back the way the user left them.
 
 ## Relaunch buttons (Generators AND Actions)
 
-### Attach relaunch data when you create or modify a node
+Relaunch data serves two roles. Use **both** when applicable — they do not conflict.
+
+### Page level — discovery (every tool)
+
+On plugin open, attach relaunch data to **`figma.currentPage`** so the tool appears in the page properties panel while browsing the file. This is how users discover the tool without selecting an output node first.
+
+```ts
+function setPageRelaunchForDiscovery(): void {
+  figma.currentPage.setRelaunchData({
+    edit: 'Open this tool',
+  });
+}
+
+figma.showUI(__html__, { width: 240, height: 320, themeColors: true });
+setPageRelaunchForDiscovery();
+```
+
+The scaffold ships this helper. **Always call it once at startup.** Use the `edit` command only at page level — `regenerate` belongs on nodes that hold state or were modified.
+
+Action utilities that never create output nodes rely on page-level relaunch for discovery. Generators still need page-level relaunch **in addition to** output-node relaunch below.
+
+### Node level — attachment (when the tool touches nodes)
+
+When the tool creates or modifies nodes, also attach relaunch data on those nodes so Regenerate / Edit follow the selection in the Inspect panel.
 
 ```ts
 // Generator: after creating the output frame
@@ -140,11 +163,11 @@ frame.setRelaunchData({
   edit: 'Open this tool to edit',
 });
 
-// Action: after operating on selected nodes
+// Action: after operating on selected nodes (optional — page level still required)
 selectedNode.setRelaunchData({ regenerate: 'Run this action again' });
 ```
 
-The user sees "Regenerate" and "Edit" buttons in the Inspect panel when they select the node. This is how a tool feels **attached** to a node, not floating in a menu.
+The user sees "Regenerate" and "Edit" on the output frame when they select it. Page-level `edit` remains available when nothing is selected.
 
 ### Handle the launch path with `figma.command`
 
@@ -448,7 +471,8 @@ Never use in any string the user sees: `plugin`, `Code Object`, `definePropertie
   - [ ] Builds a single auto-layout frame
   - [ ] Sets `setPluginData('toolState', ...)` on the output
   - [ ] Sets `setPluginData('toolId', TOOL_ID)`
-  - [ ] Sets `setRelaunchData({ regenerate, edit })`
+  - [ ] Sets `setRelaunchData({ regenerate, edit })` on the output frame
+  - [ ] Calls `setPageRelaunchForDiscovery()` on `figma.currentPage` at startup
   - [ ] Calls `viewport.scrollAndZoomIntoView` on **create** only
   - [ ] Wrapped in try/catch with `figma.notify` on error
   - [ ] Uses `isRegenerating` guard
@@ -479,7 +503,8 @@ Never use in any string the user sees: `plugin`, `Code Object`, `definePropertie
 - [ ] Action function operates on `figma.currentPage.selection`
 - [ ] If operating on ids from stored metadata, use `await figma.getNodeByIdAsync` (never `figma.getNodeById`)
 - [ ] Empty-selection case handled with `figma.notify`
-- [ ] `setRelaunchData` on each affected node (or the parent)
+- [ ] `setPageRelaunchForDiscovery()` on `figma.currentPage` at startup
+- [ ] Optional: `setRelaunchData` on each affected node for re-run from Inspect
 - [ ] Success or count reported via `figma.notify`
 - [ ] Wrapped in try/catch with `figma.notify` on error
 - [ ] UI in `ui.template.html`; bundled via `npm run bundle-ui`

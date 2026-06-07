@@ -89,9 +89,9 @@ scaffold/src/               ← committed empty starting point; copied by npm ru
 2. **Read the matching reference `code.ts`** end to end. Note every practice.
 3. **Read `scaffold/src/ui.template.html`** for UI shell patterns. Use `docs/08-figui3-ui.md` only when the scaffold or control behavior needs deeper explanation.
 4. **Overwrite `{pluginRoot}/src/code.ts`** following the same pattern. Include every applicable practice from `docs/07-plugin-practices.md` (especially **Output targeting** — read `reference/01-generator-color-swatch/code.ts`):
-   - For Generators: state types, `regenerate(state, 'create' | 'update')`, output targeting (`getSelectedToolFrame`, `outputSelected`, **create must not remove other outputs**), setPluginData, setRelaunchData, selectionchange, figma.command handling, try/catch — see `docs/07-plugin-practices.md > Output targeting` and `reference/01-generator-color-swatch/code.ts`
+   - For Generators: state types, `regenerate(state, 'create' | 'update')`, output targeting (`getSelectedToolFrame`, `outputSelected`, **create must not remove other outputs**), setPluginData, page + node `setRelaunchData`, selectionchange, figma.command handling, try/catch — see `docs/07-plugin-practices.md > Output targeting` and `reference/01-generator-color-swatch/code.ts`
    - If `toolState` stores node ids: `await figma.getNodeByIdAsync` only (`getNodeById` throws with template `documentAccess: "dynamic-page"`)
-   - For Actions: selection handling, figma.notify, setRelaunchData, no persistent state
+   - For Actions: selection handling, figma.notify, page-level `setRelaunchData` (discovery), optional node relaunch on affected layers, no persistent state
    - If the prompt needs live public data: `fetch` in `code.ts` per `docs/10-network-open-apis.md` (no API keys; do not edit manifest)
 5. **Overwrite `{pluginRoot}/src/ui.template.html`** from the scaffold pattern — preserve the FigUI3 placeholders (`<!-- FIGUI3_CSS -->`, `<!-- FIGUI3_JS -->`), panel spacing CSS, color-picker CSS block, and **`measurePanelHeight` / `watchColorPickerDialog`**. Use **only** FigUI3 web components from `docs/02-propskit-reference.md`. If the tool uses `<fig-input-color>`, read **`docs/08-figui3-ui.md > Color picker`** and use `text="true" alpha="true" picker="figma"`.
 6. **Run `npm run build`** inside `{pluginRoot}` to regenerate `ui.html` and `code.js`.
@@ -121,7 +121,7 @@ scaffold/src/               ← committed empty starting point; copied by npm ru
 - State persists on the output node via `setPluginData` (Generators).
 - Stored node ids resolved with `getNodeByIdAsync`, not `getNodeById` (template uses `dynamic-page` access).
 - Public open APIs allowed via pre-wired `networkAccess: ["*"]`; no API keys in UI (`docs/10-network-open-apis.md`).
-- Relaunch buttons attached via `setRelaunchData` (both archetypes).
+- Page-level relaunch on `figma.currentPage` at startup; node-level relaunch on outputs / affected layers when applicable (both archetypes).
 - `figma.command` handled at startup (both archetypes).
 - Output looks intentional, not wireframe grey placeholder.
 - No forbidden words anywhere a user can see.

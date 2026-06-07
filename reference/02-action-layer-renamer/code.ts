@@ -18,7 +18,7 @@
  *   4. UI is a one-button panel: user picks options, hits Apply
  *   5. Operate on figma.currentPage.selection
  *   6. Handle empty selection gracefully (figma.notify)
- *   7. setRelaunchData on the affected node(s) so user can re-run from Inspect panel
+ *   7. setRelaunchData — page level for discovery; optional on affected nodes for re-run
  *   8. figma.notify for success/failure feedback (never modals)
  *   9. Try/catch around mutations
  *  10. NO auto-run on load — Actions wait for the user to click Apply
@@ -27,6 +27,13 @@
  */
 
 figma.showUI(__html__, { width: 280, height: 220, themeColors: true });
+
+function setPageRelaunchForDiscovery(): void {
+  figma.currentPage.setRelaunchData({
+    edit: 'Open this tool',
+  });
+}
+setPageRelaunchForDiscovery();
 
 // ---- Message contracts ----
 

@@ -5,7 +5,15 @@
  * See docs/10-network-open-apis.md.
  */
 
+/** Page-level relaunch for file discovery — does not replace node-level relaunch on outputs. */
+function setPageRelaunchForDiscovery(): void {
+  figma.currentPage.setRelaunchData({
+    edit: 'Open this tool',
+  });
+}
+
 figma.showUI(__html__, { width: 240, height: 320, themeColors: true });
+setPageRelaunchForDiscovery();
 
 figma.ui.onmessage = (msg: { type: string; height?: number }) => {
   // Auto-resize: every GenTool panel hugs its content. See docs/08-figui3-ui.md.

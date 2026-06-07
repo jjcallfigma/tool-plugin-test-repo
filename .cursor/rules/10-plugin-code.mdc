@@ -39,6 +39,12 @@ type CodeToUiMessage =
 
 const TOOL_ID = '<your-tool-id>';
 
+function setPageRelaunchForDiscovery(): void {
+  figma.currentPage.setRelaunchData({ edit: 'Open this tool' });
+}
+
+setPageRelaunchForDiscovery();
+
 let currentOutput: FrameNode | null = null;
 let isRegenerating = false;
 
@@ -169,7 +175,9 @@ The `toolId` lets you safely identify this tool's nodes vs. others' on selection
 
 ## Relaunch buttons (both archetypes)
 
-After producing or modifying a node, attach relaunch data so the user can re-run the tool from the node's Inspect panel:
+**Page level (discovery):** call `setPageRelaunchForDiscovery()` once at startup — sets `edit` on `figma.currentPage`. Required for every tool. See `docs/07-plugin-practices.md > Relaunch buttons`.
+
+**Node level (attachment):** after producing or modifying a node, attach relaunch data on that node:
 
 ```ts
 frame.setRelaunchData({
@@ -178,7 +186,7 @@ frame.setRelaunchData({
 });
 ```
 
-The command names (`regenerate`, `edit`) are pre-declared in the manifest's `relaunchButtons`. Use exactly those names.
+Generators use both page and output-node relaunch. Actions use page-level always; add node-level relaunch on affected layers when the tool modifies selection. Page-level relaunch does not replace node-level relaunch.
 
 ## Relaunch command handling at startup
 

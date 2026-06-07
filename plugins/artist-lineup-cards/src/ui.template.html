@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Artist Lineup Cards</title>
+<style>
+<!-- FIGUI3_CSS -->
+</style>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: auto;
+    min-height: 0;
+  }
+
+  body {
+    display: block;
+  }
+
+  #plugin-root {
+    height: auto;
+  }
+
+  fig-group {
+    margin-bottom: 0;
+    padding-bottom: var(--spacer-2);
+  }
+
+  fig-group + fig-group {
+    box-shadow: inset 0 1px 0 0 var(--figma-color-border);
+    padding-top: var(--spacer-2);
+  }
+
+  body > fig-group:first-of-type,
+  #plugin-root > fig-group:first-of-type {
+    padding-top: 12px;
+  }
+
+  fig-group > fig-header {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    min-height: 0;
+    padding: var(--spacer-1) var(--spacer-3) 0;
+    margin: 0;
+  }
+
+  fig-group + fig-group > fig-header {
+    padding-top: var(--spacer-1);
+  }
+
+  fig-group > fig-header h3 {
+    font-weight: var(--body-medium-fontWeight);
+    line-height: var(--body-medium-lineHeight);
+    margin: 0;
+    padding-bottom: var(--spacer-1);
+  }
+
+  fig-footer,
+  fig-footer[borderless] {
+    box-shadow: inset 0 1px 0 var(--figma-color-border);
+    flex-direction: column;
+    align-items: stretch;
+    height: auto;
+    min-height: 0;
+    padding: 12px 16px;
+  }
+
+  fig-footer::before {
+    display: none;
+  }
+
+  .footer-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .footer-actions fig-button {
+    width: 100%;
+    margin: 0;
+  }
+
+  .image-actions {
+    padding: 0 var(--spacer-3) var(--spacer-1);
+  }
+
+  .image-actions fig-button {
+    width: 100%;
+  }
+
+  .thumb-field {
+    padding: 0 var(--spacer-3) var(--spacer-1);
+  }
+
+  .thumb-field[hidden] {
+    display: none;
+  }
+
+  .thumb-label {
+    display: block;
+    font-size: var(--body-medium-fontSize);
+    color: var(--figma-color-text-secondary);
+    margin-bottom: var(--spacer-1);
+  }
+
+  #imageChooser {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+  }
+
+  #imageChooser fig-choice {
+    width: 100%;
+    aspect-ratio: 1;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid var(--figma-color-border);
+    background: var(--figma-color-bg-secondary);
+  }
+
+  #imageChooser fig-choice[selected] {
+    border-color: var(--figma-color-border-brand);
+    box-shadow: 0 0 0 1px var(--figma-color-border-brand);
+  }
+
+  #imageChooser fig-choice img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .search-status {
+    padding: 0 var(--spacer-3) var(--spacer-1);
+    font-size: var(--body-small-fontSize);
+    color: var(--figma-color-text-secondary);
+  }
+
+  .search-status[hidden] {
+    display: none;
+  }
+
+  dialog.fig-fill-picker-dialog {
+    width: 240px;
+    max-width: 240px;
+    min-width: 240px;
+    max-height: none;
+    height: max-content;
+    overflow: visible;
+  }
+
+  dialog.fig-fill-picker-dialog .fig-fill-picker-sliders fig-slider {
+    width: 100%;
+    display: flex;
+  }
+
+  dialog.fig-fill-picker-dialog .fig-fill-picker-sliders fig-slider .fig-slider-input-container {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  dialog.fig-fill-picker-dialog fig-field.fig-fill-picker-inputs[direction="horizontal"] {
+    --fig-field-left-padding: 0;
+    --fig-field-label-ratio: calc(3.5rem + var(--spacer-3));
+    --fig-field-input-ratio: 1fr;
+  }
+
+  dialog.fig-fill-picker-dialog fig-field.fig-fill-picker-inputs > .fig-fill-picker-input-mode {
+    width: 3.5rem;
+    max-width: 100%;
+    justify-self: center;
+  }
+
+  dialog.fig-fill-picker-dialog fig-field.fig-fill-picker-inputs > .fig-fill-picker-input-fields {
+    min-width: 0;
+  }
+
+  .collapsible {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 200ms ease, opacity 160ms ease;
+    opacity: 1;
+  }
+  .collapsible > .collapsible-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+  .collapsible[collapsed] {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    pointer-events: none;
+  }
+</style>
+</head>
+<body>
+
+<div id="plugin-root">
+
+  <fig-group>
+    <fig-header borderless><h3>Artist</h3></fig-header>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="artistName">Artist name</label>
+      <fig-input-text id="artistName" value="Tame Impala"></fig-input-text>
+    </fig-field>
+  </fig-group>
+
+  <fig-group>
+    <fig-header borderless><h3>Image</h3></fig-header>
+    <div class="image-actions">
+      <fig-button id="findImages" variant="secondary">Find images</fig-button>
+    </div>
+    <div id="searchStatus" class="search-status" hidden>Searching…</div>
+    <div id="thumbField" class="thumb-field" hidden>
+      <span class="thumb-label">Image candidates</span>
+      <fig-chooser id="imageChooser" choice-element="fig-choice"></fig-chooser>
+    </div>
+  </fig-group>
+
+  <fig-group>
+    <fig-header borderless><h3>Performance</h3></fig-header>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="stage">Stage</label>
+      <fig-dropdown id="stage" value="Main Stage">
+        <option value="Main Stage">Main Stage</option>
+        <option value="Redwood Stage">Redwood Stage</option>
+        <option value="Creek Stage">Creek Stage</option>
+        <option value="The Grove">The Grove</option>
+      </fig-dropdown>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="time">Time</label>
+      <fig-input-text id="time" value="10:00 PM"></fig-input-text>
+    </fig-field>
+  </fig-group>
+
+  <fig-group>
+    <fig-header borderless><h3>Style</h3></fig-header>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="imageTreatment">Image treatment</label>
+      <fig-dropdown id="imageTreatment" value="noir">
+        <option value="noir">Noir</option>
+        <option value="fog">Fog</option>
+        <option value="high-contrast">High contrast</option>
+        <option value="soft-grain">Soft grain</option>
+      </fig-dropdown>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="cropBias">Crop bias</label>
+      <fig-dropdown id="cropBias" value="center">
+        <option value="center">Center</option>
+        <option value="top">Top</option>
+        <option value="bottom">Bottom</option>
+      </fig-dropdown>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="grain">Grain</label>
+      <fig-slider id="grain" variant="neue" value="35" min="0" max="100" text="true" units="%" full></fig-slider>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="contrast">Contrast</label>
+      <fig-slider id="contrast" variant="neue" value="80" min="0" max="100" text="true" units="%" full></fig-slider>
+    </fig-field>
+    <fig-field direction="horizontal" columns="thirds">
+      <label for="showSourceNote">Show source note</label>
+      <fig-switch id="showSourceNote"></fig-switch>
+    </fig-field>
+  </fig-group>
+
+  <fig-footer borderless>
+    <div class="footer-actions">
+      <fig-button id="run" variant="primary">Generate</fig-button>
+    </div>
+  </fig-footer>
+
+</div>
+
+<script>
+<!-- FIGUI3_JS -->
+</script>
+<script>
+  var lastReportedHeight = 0;
+  var resizeRaf = 0;
+  var outputSelected = false;
+  var imageCandidates = [];
+
+  function reportHeight(height) {
+    var h = Math.ceil(height);
+    if (h && h !== lastReportedHeight) {
+      lastReportedHeight = h;
+      parent.postMessage({ pluginMessage: { type: 'resize', height: h } }, '*');
+    }
+  }
+
+  function measurePanelHeight() {
+    var root = document.getElementById('plugin-root');
+    if (!root) return 0;
+    var height = Math.ceil(root.getBoundingClientRect().height);
+    var dialog = document.querySelector('dialog.fig-fill-picker-dialog[open]');
+    if (dialog) {
+      var dialogBottom = Math.ceil(dialog.getBoundingClientRect().bottom + 12);
+      height = Math.max(height, dialogBottom);
+    }
+    return height;
+  }
+
+  function reportPanelHeight() {
+    reportHeight(measurePanelHeight());
+  }
+
+  (function setupAutoResize() {
+    var root = document.getElementById('plugin-root');
+    if (!root || typeof ResizeObserver === 'undefined') return;
+    var observer = new ResizeObserver(function () {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(function () {
+        resizeRaf = 0;
+        reportPanelHeight();
+      });
+    });
+    observer.observe(root);
+  })();
+
+  (function watchColorPickerDialog() {
+    if (typeof MutationObserver === 'undefined') return;
+    var observer = new MutationObserver(function () {
+      if (resizeRaf) cancelAnimationFrame(resizeRaf);
+      resizeRaf = requestAnimationFrame(function () {
+        resizeRaf = 0;
+        reportPanelHeight();
+      });
+    });
+    observer.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ['open'],
+    });
+  })();
+
+  function readValue(el) {
+    if (!el) return '';
+    if (el.tagName === 'FIG-SWITCH') return !!el.checked;
+    if (el.tagName === 'FIG-SLIDER' || el.tagName === 'FIG-INPUT-NUMBER') return Number(el.value);
+    return el.value ?? '';
+  }
+
+  function writeValue(el, value) {
+    if (!el) return;
+    if (el.tagName === 'FIG-SWITCH') {
+      el.checked = !!value;
+      return;
+    }
+    el.value = value == null ? '' : String(value);
+  }
+
+  function getStateFromForm() {
+    var selectedId = document.getElementById('imageChooser').value || null;
+    var selected = imageCandidates.find(function (c) { return c.id === selectedId; }) || null;
+
+    return {
+      artistName: String(readValue(document.getElementById('artistName')) || 'Tame Impala'),
+      stage: String(readValue(document.getElementById('stage')) || 'Main Stage'),
+      time: String(readValue(document.getElementById('time')) || '10:00 PM'),
+      imageTreatment: String(readValue(document.getElementById('imageTreatment')) || 'noir'),
+      cropBias: String(readValue(document.getElementById('cropBias')) || 'center'),
+      grain: Number(readValue(document.getElementById('grain')) || 35),
+      contrast: Number(readValue(document.getElementById('contrast')) || 80),
+      showSourceNote: !!readValue(document.getElementById('showSourceNote')),
+      selectedImageId: selectedId,
+      imageUrl: selected ? selected.imageUrl : null,
+      thumbUrl: selected ? selected.thumbUrl : null,
+      imageTitle: selected ? selected.title : null,
+      imageSourceUrl: selected ? selected.sourceUrl : null,
+      imageCandidates: imageCandidates,
+      canonicalArtistName: null,
+    };
+  }
+
+  function renderThumbnails(candidates, selectedId) {
+    var chooser = document.getElementById('imageChooser');
+    var thumbField = document.getElementById('thumbField');
+    imageCandidates = candidates.slice(0, 6);
+
+    chooser.innerHTML = '';
+    if (!imageCandidates.length) {
+      thumbField.hidden = true;
+      reportPanelHeight();
+      return;
+    }
+
+    imageCandidates.forEach(function (candidate) {
+      var choice = document.createElement('fig-choice');
+      choice.setAttribute('value', candidate.id);
+      if (selectedId && candidate.id === selectedId) {
+        choice.setAttribute('selected', '');
+      }
+      var img = document.createElement('img');
+      img.src = candidate.thumbUrl;
+      img.alt = candidate.title;
+      choice.appendChild(img);
+      chooser.appendChild(choice);
+    });
+
+    if (selectedId) chooser.value = selectedId;
+    thumbField.hidden = false;
+    reportPanelHeight();
+  }
+
+  function setStateInForm(state) {
+    writeValue(document.getElementById('artistName'), state.artistName);
+    writeValue(document.getElementById('stage'), state.stage);
+    writeValue(document.getElementById('time'), state.time);
+    writeValue(document.getElementById('imageTreatment'), state.imageTreatment);
+    writeValue(document.getElementById('cropBias'), state.cropBias);
+    writeValue(document.getElementById('grain'), state.grain);
+    writeValue(document.getElementById('contrast'), state.contrast);
+    writeValue(document.getElementById('showSourceNote'), state.showSourceNote);
+    renderThumbnails(state.imageCandidates || [], state.selectedImageId);
+  }
+
+  function fireRegenerate() {
+    if (!outputSelected) return;
+    parent.postMessage({ pluginMessage: { type: 'regenerate', state: getStateFromForm() } }, '*');
+  }
+
+  function bindCommitFire(el) {
+    if (!el) return;
+    el.addEventListener('change', fireRegenerate);
+  }
+
+  Promise.all([
+    customElements.whenDefined('fig-group'),
+    customElements.whenDefined('fig-field'),
+    customElements.whenDefined('fig-input-text'),
+    customElements.whenDefined('fig-dropdown'),
+    customElements.whenDefined('fig-slider'),
+    customElements.whenDefined('fig-switch'),
+    customElements.whenDefined('fig-button'),
+    customElements.whenDefined('fig-footer'),
+    customElements.whenDefined('fig-chooser'),
+    customElements.whenDefined('fig-choice'),
+  ]).then(function () {
+    bindCommitFire(document.getElementById('artistName'));
+    bindCommitFire(document.getElementById('stage'));
+    bindCommitFire(document.getElementById('time'));
+    bindCommitFire(document.getElementById('imageTreatment'));
+    bindCommitFire(document.getElementById('cropBias'));
+    bindCommitFire(document.getElementById('grain'));
+    bindCommitFire(document.getElementById('contrast'));
+    bindCommitFire(document.getElementById('showSourceNote'));
+
+    document.getElementById('imageChooser').addEventListener('change', fireRegenerate);
+
+    document.getElementById('findImages').addEventListener('click', function () {
+      var artistName = String(readValue(document.getElementById('artistName')) || '').trim();
+      if (!artistName) return;
+      parent.postMessage({ pluginMessage: { type: 'findImages', artistName: artistName } }, '*');
+    });
+
+    document.getElementById('run').addEventListener('click', function () {
+      parent.postMessage({ pluginMessage: { type: 'generate', state: getStateFromForm() } }, '*');
+    });
+
+    reportPanelHeight();
+  });
+
+  window.onmessage = function (event) {
+    var msg = event.data.pluginMessage;
+    if (!msg) return;
+
+    if (msg.type === 'loadState') {
+      setStateInForm(msg.state);
+    }
+
+    if (msg.type === 'outputSelected') {
+      outputSelected = !!msg.selected;
+    }
+
+    if (msg.type === 'imageSearchStart') {
+      var status = document.getElementById('searchStatus');
+      status.textContent = 'Searching…';
+      status.hidden = false;
+      reportPanelHeight();
+    }
+
+    if (msg.type === 'imageSearchComplete') {
+      var statusEl = document.getElementById('searchStatus');
+      statusEl.hidden = true;
+      imageCandidates = msg.candidates || [];
+      renderThumbnails(imageCandidates, imageCandidates[0] ? imageCandidates[0].id : null);
+      if (imageCandidates.length && outputSelected) {
+        fireRegenerate();
+      }
+    }
+  };
+</script>
+
+</body>
+</html>

@@ -14,7 +14,7 @@
  *   6. RGB conversion helper (Figma uses 0-1 floats)
  *   7. setPluginData('toolState', ...) — persists state ON the node
  *   8. setPluginData('toolId', ...) — safe identification on selection
- *   9. setRelaunchData — adds "Regenerate" and "Edit" buttons to the node's Inspect panel
+ *   9. setRelaunchData — page level for discovery; output frame for Regenerate / Edit
  *  10. viewport.scrollAndZoomIntoView — centers user on new output only
  *  11. selectionchange listener — rehydrates the UI + posts outputSelected
  *  12. figma.command handling — detects launch via relaunch button vs. menu
@@ -24,6 +24,13 @@
  */
 
 figma.showUI(__html__, { width: 280, height: 480, themeColors: true });
+
+function setPageRelaunchForDiscovery(): void {
+  figma.currentPage.setRelaunchData({
+    edit: 'Open this tool',
+  });
+}
+setPageRelaunchForDiscovery();
 
 type State = {
   count: number;
