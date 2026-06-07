@@ -165,17 +165,17 @@ The plugin has two build steps:
 
 ```bash
 cd template
-npm install          # installs @rogieking/figui3, copies vendor files, runs bundle-ui
-npm run build        # bundle-ui + tsc
+npm install          # installs @rogieking/figui3, copies vendor files, runs build
+npm run dev          # watch code.ts + ui.template.html while developing
+npm run build        # one-off bundle-ui + tsc
 npm run bundle-ui    # regenerate ui.html after UI edits only
-npm run watch        # tsc --watch (re-run bundle-ui manually when UI changes)
 ```
 
-**Always run `bundle-ui` after editing `ui.template.html`.** Figma loads `ui.html`, not the template. See `docs/08-figui3-ui.md` for why FigUI3 must be inlined.
+Figma loads `ui.html`, not `ui.template.html`. See `docs/08-figui3-ui.md` for why FigUI3 must be inlined.
 
 ## Loading in Figma
 
-1. Build (`npm run build`) or at minimum `npm run bundle-ui && npx tsc`.
+1. `npm install` (includes an initial build), or run `npm run dev` while editing.
 2. Open Figma desktop. Plugins → Development → Import plugin from manifest.
 3. Pick the `manifest.json`.
 4. Plugins → Development → [Your tool name] to run.

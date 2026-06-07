@@ -19,7 +19,7 @@ Resolve where to write **before** editing source files:
 
 Check `plugins/.active` at generation time. Factory workflow: **`docs/11-plugin-factory.md`**. Human creates plugins with `npm run new-plugin -- <slug>` at repo root.
 
-Throughout this file, **`{pluginRoot}`** means the resolved folder (`template/` or `plugins/<slug>/`). Only overwrite `{pluginRoot}/src/code.ts` and `{pluginRoot}/src/ui.template.html`. Run `npm run build` inside `{pluginRoot}`.
+Throughout this file, **`{pluginRoot}`** means the resolved folder (`template/` or `plugins/<slug>/`). Only overwrite `{pluginRoot}/src/code.ts` and `{pluginRoot}/src/ui.template.html`. After generation, run **`npm run build`** once inside `{pluginRoot}` (agents do this; humans can use **`npm run dev`** during iterative work instead).
 
 ## Hot path before writing code
 

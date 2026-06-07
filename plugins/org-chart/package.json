@@ -4,10 +4,11 @@
   "description": "Org Chart — Figma plugin",
   "scripts": {
     "build": "npm run bundle-ui && tsc",
-    "watch": "tsc --watch",
+    "dev": "node scripts/dev.mjs",
+    "watch": "npm run dev",
     "bundle-ui": "node scripts/bundle-ui.mjs",
     "reset": "node scripts/reset-template.mjs",
-    "postinstall": "mkdir -p src/vendor && cp node_modules/@rogieking/figui3/dist/fig.css node_modules/@rogieking/figui3/dist/fig.js src/vendor/ && npm run bundle-ui"
+    "postinstall": "mkdir -p src/vendor && cp node_modules/@rogieking/figui3/dist/fig.css node_modules/@rogieking/figui3/dist/fig.js src/vendor/ && npm run build"
   },
   "devDependencies": {
     "@figma/plugin-typings": "^1.108.0",

@@ -144,8 +144,11 @@ You are **not** testing “can Cursor set up a Figma plugin from zero.” Infras
 
 ```bash
 # One-time
-cd template && npm install && npm run build
+cd template && npm install
 # Import template/manifest.json in Figma once
+
+# While developing or testing
+cd template && npm run dev
 
 # Every test run
 cd template && npm run reset

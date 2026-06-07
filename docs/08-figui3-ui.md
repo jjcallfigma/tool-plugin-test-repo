@@ -95,13 +95,13 @@ Minified `fig.js` contains `$&` sequences. If `bundle-ui.mjs` uses a string repl
 
 ```bash
 cd template
-npm install          # copies fig.css/fig.js to src/vendor/ and runs bundle-ui
-npm run bundle-ui    # regenerates src/ui.html from ui.template.html
-npm run build        # bundle-ui + tsc
-npm run watch        # tsc --watch (re-run bundle-ui manually after UI edits)
+npm install          # copies fig.css/fig.js to src/vendor/ and runs build
+npm run dev          # watch code.ts + ui.template.html (recommended while editing)
+npm run bundle-ui    # regenerate src/ui.html from ui.template.html only
+npm run build        # one-off bundle-ui + tsc
 ```
 
-After any UI change: **bundle-ui, then re-run the tool in Figma.**
+After file changes: **re-run the tool in Figma** (Figma does not hot-reload the plugin UI).
 
 ---
 

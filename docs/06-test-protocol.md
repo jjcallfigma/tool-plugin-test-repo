@@ -10,7 +10,7 @@ Goal: pressure-test Cursor a few times against the Bento Grid prompt. If the sam
 2. Open a fresh chat in Cursor (don't carry context from previous runs).
 3. Paste the Bento Grid prompt from `docs/05-test-prompts.md` verbatim (`Create a custom tool that…`). Say nothing else.
 4. Let Cursor write the files. Don't intervene.
-5. Run `cd template && npm run build` (or rely on `npm run watch`).
+5. Run `cd template && npm run dev` (or rely on `npm run build` after agent generation).
 6. In Figma Desktop: Plugins → Development → GenTool Comparison.
 7. Run the 5-point check below.
 8. Log the result.

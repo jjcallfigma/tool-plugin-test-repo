@@ -1,8 +1,10 @@
 # Figma Plugin Factory
 
-A workspace for building Figma plugins with Cursor. It ships a TypeScript + FigUI3 scaffold, opinionated plugin patterns, and layered AI context (rules, docs, skills) so generated tools follow consistent structure and UI conventions.
+A workspace for building Figma plugins with Cursor. It ships a TypeScript + [FigUI3](https://github.com/rogie/figui3) scaffold, opinionated plugin patterns, and layered AI context (rules, docs, skills) so generated tools follow consistent structure and UI conventions.
 
 ![Example output: 240px panel with controls and generated canvas content](docs/images/bento-grid-example.png)
+
+Panel UI is built with **[FigUI3](https://github.com/rogie/figui3)** — Figma-native web components by [Rogie King](https://github.com/rogie). The template inlines FigUI3 into each plugin’s `ui.html`; see [`docs/08-figui3-ui.md`](docs/08-figui3-ui.md) for bundling and layout.
 
 ## What’s included
 
@@ -13,7 +15,7 @@ A workspace for building Figma plugins with Cursor. It ships a TypeScript + FigU
 - **`docs/`** — plugin API patterns, FigUI3 UI setup, output targeting, network access
 - **`.cursor/rules/`** and **`.cursor/skills/`** — Cursor context loaded during generation
 
-Generated plugins use FigUI3 web components, commit-fire controls, state persistence on output nodes, relaunch buttons, and a 240px panel layout. See `docs/07-plugin-practices.md` for the full checklist.
+Generated plugins use [FigUI3](https://github.com/rogie/figui3) web components, commit-fire controls, state persistence on output nodes, relaunch buttons, and a 240px panel layout. See `docs/07-plugin-practices.md` for the full checklist.
 
 ## Prerequisites
 
@@ -25,13 +27,25 @@ Generated plugins use FigUI3 web components, commit-fire controls, state persist
 
 ```bash
 cd template
-npm install
-npm run build
+npm install          # installs deps and runs an initial build
+npm run dev          # keep running while you work (optional but recommended)
 ```
 
 In Figma: **Plugins → Development → Import plugin from manifest** → select `template/manifest.json`.
 
-After the first import, rebuilds update the same development entry. Re-import only when `manifest.json` changes.
+After the first import, file changes on disk update `src/code.js` and `src/ui.html` automatically when `npm run dev` is running. Close and re-run the tool in Figma to pick up changes. Re-import only when `manifest.json` changes.
+
+## Development workflow
+
+Figma loads compiled files from disk (`code.js`, `ui.html`). There is no live reload inside the plugin panel — you re-run the tool after the watcher writes new output.
+
+| Command | When |
+|---|---|
+| `npm install` | Once per clone or plugin folder. Runs a full build via `postinstall`. |
+| `npm run dev` | While editing. Watches `code.ts` and `ui.template.html`. |
+| `npm run build` | One-off compile (CI, after `git pull`, or when the agent finishes a generation). |
+
+Start `npm run dev` in a terminal tab and leave it open. Edit in Cursor; when the watcher finishes, re-run the tool in Figma.
 
 ## Generate a plugin
 
@@ -141,7 +155,8 @@ When generation misses a pattern:
 Run inside `template/` or `plugins/<slug>/`:
 
 ```bash
-npm run build        # bundle UI + compile TypeScript
-npm run bundle-ui    # regenerate ui.html from ui.template.html
+npm run dev          # watch code.ts + ui.template.html (use while developing)
+npm run build        # one-off: bundle UI + compile TypeScript
+npm run bundle-ui    # regenerate ui.html from ui.template.html only
 npm run reset        # restore src/ from scaffold/
 ```

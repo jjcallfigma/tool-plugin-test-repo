@@ -20,7 +20,7 @@ The plugin UI runs in a Figma iframe. PropsKit controls are **[FigUI3](https://r
 
 `{pluginRoot}` is `template/` or `plugins/<slug>/` per `plugins/.active` (see `AGENTS.md`).
 
-After UI changes: `npm run bundle-ui` (or `npm run build`), then re-run in Figma.
+After UI changes: run `npm run dev` while editing, or `npm run bundle-ui` / `npm run build` for a one-off, then re-run in Figma.
 
 ## Required behavior
 

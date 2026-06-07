@@ -54,7 +54,7 @@ Each new plugin gets:
 2. In Figma Desktop: **Plugins → Development → Import plugin from manifest**
 3. Pick `plugins/<slug>/manifest.json`
 4. The plugin appears under **Plugins → Development** with its display name.
-5. After code changes: `cd plugins/<slug> && npm run build`, then re-run the plugin in Figma.
+5. While editing: `cd plugins/<slug> && npm run dev`, then re-run the plugin in Figma after changes.
 
 Re-import only if `manifest.json` changes in git.
 
