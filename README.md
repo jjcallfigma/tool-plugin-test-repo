@@ -1,125 +1,27 @@
-# Steering Cursor with docs, rules, and skills
+# Figma Plugin Factory
 
-![Bento Grid tool generated from a single prompt: a 240px panel with Layout and Style & content controls on the left, and an asymmetric bento grid of marketing cards on the canvas.](docs/images/bento-grid-example.png)
+A workspace for building Figma plugins with Cursor. It ships a TypeScript + FigUI3 scaffold, opinionated plugin patterns, and layered AI context (rules, docs, skills) so generated tools follow consistent structure and UI conventions.
 
-This repo is a harness for generating Figma plugins from a single prompt. The interesting part isn't the plugin output — it's the **layered context system** that pushes a general-purpose coding model toward a specific, opinionated style of tool without making every run read the whole repair manual.
+![Example output: 240px panel with controls and generated canvas content](docs/images/bento-grid-example.png)
 
-The goal: take a one-line prompt like *"Create a custom tool that swaps Lorem Ipsum with real-looking copy"* and get back a working, polished Figma plugin that matches a strict house style — every time, without back-and-forth.
+## What’s included
 
-The output quality comes from stacking three layers of guidance: **always-on rules**, **deep reference docs**, and **on-demand skills**. Each layer does a different job. None of them work well alone.
+- **`template/`** — single-plugin scaffold with a stable manifest for iterative development
+- **`plugins/<slug>/`** — factory mode for multiple plugins, each with its own manifest
+- **`scaffold/`** — empty starting point copied into `src/` on reset
+- **`reference/`** — working Generator and Action examples
+- **`docs/`** — plugin API patterns, FigUI3 UI setup, output targeting, network access
+- **`.cursor/rules/`** and **`.cursor/skills/`** — Cursor context loaded during generation
 
-## The three layers
+Generated plugins use FigUI3 web components, commit-fire controls, state persistence on output nodes, relaunch buttons, and a 240px panel layout. See `docs/07-plugin-practices.md` for the full checklist.
 
-### 1. Rules — always-on, short, prescriptive
+## Prerequisites
 
-`.cursor/rules/*.mdc` files Cursor loads automatically based on context.
+- [Figma Desktop](https://www.figma.com/downloads/)
+- [Node.js](https://nodejs.org/) 18+
+- [Cursor](https://cursor.com/) (or another editor; the context files are Cursor-oriented)
 
-| Rule | When it loads | What it does |
-|---|---|---|
-| `00-philosophy.mdc` | Every prompt | Six hard rules every tool must obey (one-shot output, explicit first run, persistent controls, etc.) + forbidden words |
-| `05-custom-tool-trigger.mdc` | Every prompt | Maps the opener *"Create a custom tool…"* to a specific workflow |
-| `10-plugin-code.mdc` | Editing `code.ts` | Required sandbox shape (typed messages, `regenerate(state, mode)`, output targeting) |
-| `11-network-open-apis.mdc` | Prompts needing live public data | Allowed vs forbidden network patterns |
-| `20-ui-html.mdc` | Editing `ui.template.html` / `ui.html` | FigUI3 init, commit-fire, footer spec |
-| `30-manifest.mdc` | Editing `manifest.json` | "Don't touch this" enforcement |
-
-Rules are short because they either fire constantly or load for a clear situation. They tell the model **what is non-negotiable**, not how to do it. The "how" lives in docs.
-
-**Why this matters:** without rules, the model defaults to plausible-but-wrong patterns (live-drag updates, modals for errors, auto-running on plugin open, the word "plugin" in UI strings). The model isn't wrong by default — it just has no reason to know our house style. Rules give it that reason on every turn.
-
-### 2. Docs — deep reference, loaded on demand
-
-`docs/*.md` files the rules and `AGENTS.md` point to. The model reads the short hot path first, then pulls the deeper docs only when it needs the full picture.
-
-| Doc | What it covers |
-|---|---|
-| `01-what-is-a-good-tool.md` | The bar — what makes a tool feel like a GenTool |
-| `02-propskit-reference.md` | Allowed control catalog (FigUI3 components) |
-| `03-figma-plugin-basics.md` | Plugin API quickstart, reference only |
-| `04-glossary.md` | Forbidden words in UI strings, reference only |
-| `07-plugin-practices.md` | The complete practices checklist — state, relaunch, message passing, output targeting, fonts, colors, errors |
-| `08-figui3-ui.md` | FigUI3 setup, bundling, panel layout, spacing, color picker, auto-resize. Repair manual, not hot-path reading |
-| `09-plugin-structure-and-reset.md` | Required file structure and reset workflow |
-| `10-network-open-apis.md` | Public `fetch` patterns, no API keys. Read only for live data prompts |
-
-Docs are long, opinionated, and include working code blocks. Rules say *"use commit-fire, not live updates"*; the docs explain why, show the binding pattern, and list the gotchas that caused us to write the rule in the first place.
-
-**Why this matters:** the model can't fit every detail in its working memory on every turn. The hot path points it at the reset workflow, matching reference code, scaffold UI, PropsKit catalog, and Generator output targeting. The deeper docs stay available when something is genuinely relevant.
-
-### 3. Skills — task-specific recipes, opt-in
-
-`.cursor/skills/*/SKILL.md` files the model loads only when a prompt matches a specific shape.
-
-| Skill | Triggers when |
-|---|---|
-| `plugin-factory` | Create/switch plugin folders, many plugins, manifest import path |
-| `color-picker-ui` | Tool prompt needs a color control (`fig-input-color`) |
-| `open-api-tools` | Tool prompt needs live data from a public HTTP API |
-
-Skills are the most targeted layer. They exist because some patterns are gnarly enough that scattering the knowledge across docs isn't enough — you need one focused recipe that handles the whole problem end to end.
-
-The color picker skill, for example, exists because FigUI3's color popover breaks in three different ways inside a 240px plugin iframe. Without a skill, the model would re-derive the wrong fix every time. With it, the model loads one file, gets the working CSS + JS pattern, and moves on.
-
-**Why this matters:** rules are always on (cheap to apply, expensive to bloat). Docs are deep but generic. Skills are narrow and only pulled in when relevant. Together they form a context budget that scales: simple prompts pay almost nothing, complex prompts pay only for what they need.
-
-## The two reinforcement mechanisms
-
-### `AGENTS.md` — the project briefing
-
-Cursor reads `AGENTS.md` at chat start. It's the entry point: tells the model what this workspace is, what the trigger phrase means, the **hot path before writing code**, and which deep docs are conditional references.
-
-Without `AGENTS.md`, even with rules and docs sitting in the repo, the model has no map. It might find the right doc eventually — or it might not. `AGENTS.md` removes the chance.
-
-### Reference implementations — worked examples
-
-`reference/01-generator-color-swatch/` and `reference/02-action-layer-renamer/` are full, working tools that demonstrate every practice in the docs.
-
-Docs tell the model *what* to do. References show *how it looks when done right*. The model can pattern-match against a reference faster than it can reassemble principles from prose.
-
-## Why this stack works (and why each piece is load-bearing)
-
-| Layer | Strength | If removed |
-|---|---|---|
-| Rules | Always-on; cheap; catches the obvious failure modes | Model regresses to generic patterns; forbidden words slip in; live-drag returns |
-| Docs | Deep; opinionated; cites the rationale | Rules become unexplained dogma; model can't recover from edge cases |
-| Skills | Narrow; expensive context only when needed | Gnarly patterns (color picker, fetch) get re-derived wrong each run |
-| `AGENTS.md` | The map | Model doesn't know where to look; reads the wrong files in the wrong order |
-| Reference impls | Pattern to match against | Model assembles from principles, which is slower and more error-prone |
-
-The output quality is a function of how well these layers cover the surface area of the task without bloating the default context. Every time a generation goes sideways, the fix is: **which layer should have caught this?** If it's a one-off, add it to a rule. If it has nuance, write a doc. If it's a self-contained recipe, make it a skill. If it's structural, update `AGENTS.md`.
-
-## How to extend the system
-
-When you spot a new failure mode in a generated tool:
-
-1. **Always-on, one-liner fix?** → add to `00-philosophy.mdc` or the relevant scoped rule.
-2. **Needs rationale + code examples?** → new section in the right `docs/` file, then link from the rule.
-3. **Self-contained recipe for a specific control or API pattern?** → new `.cursor/skills/<name>/SKILL.md`.
-4. **Affects which files the model reads or in what order?** → update `AGENTS.md`.
-5. **Pattern worth showing end-to-end?** → add or extend a `reference/` example.
-
-The system is designed to absorb fixes without bloating any single layer. Rules stay short. Docs stay deep. Skills stay narrow. `AGENTS.md` stays a map.
-
-## Workspace map
-
-```
-.
-├── AGENTS.md                  ← project briefing, read at chat start
-├── .cursor/
-│   ├── rules/                 ← always-on / context-scoped guidance
-│   └── skills/                ← opt-in recipes for gnarly patterns
-├── docs/                      ← deep reference, cited by rules
-├── reference/                 ← worked example tools (Generator + Action)
-├── scaffold/                  ← empty starting point for each test run
-├── scripts/                   ← plugin factory (new-plugin, use-plugin, …)
-├── plugins/<slug>/            ← one folder per real plugin (unique manifest)
-└── template/                  ← comparison harness (single stable manifest)
-    └── src/
-        ├── code.ts            ← overwritten on each generation
-        └── ui.template.html   ← overwritten on each generation
-```
-
-## One-time setup
+## Setup
 
 ```bash
 cd template
@@ -127,27 +29,119 @@ npm install
 npm run build
 ```
 
-Then in Figma Desktop: **Plugins → Development → Import plugin from manifest** → pick `template/manifest.json`. The plugin appears as **GenTool Comparison** under Plugins → Development. From that point on, every regeneration replaces `template/src/` in place — no re-import needed.
+In Figma: **Plugins → Development → Import plugin from manifest** → select `template/manifest.json`.
 
-## Per-run workflow
+After the first import, rebuilds update the same development entry. Re-import only when `manifest.json` changes.
 
-```bash
-cd template && npm run reset     # wipes src/ back to scaffold
+## Generate a plugin
+
+Reset the source, start a new chat, and prompt:
+
+```text
+Create a custom tool that …
 ```
 
-Then open a fresh Cursor chat and paste a prompt starting with **`Create a custom tool that...`**. Cursor reads `AGENTS.md`, follows the hot path, pulls conditional docs only when needed, writes `code.ts` + `ui.template.html`, runs the build, and tells you to re-run the tool in Figma.
+Cursor reads `AGENTS.md`, writes `{pluginRoot}/src/code.ts` and `{pluginRoot}/src/ui.template.html`, runs the build, and you re-run the tool in Figma.
 
-## Plugin factory (many real plugins)
-
-When you want to keep multiple tools — not just reset the comparison harness:
+Reset between runs:
 
 ```bash
-npm run new-plugin -- org-chart              # creates plugins/org-chart/, sets active
-npm run use-plugin -- org-chart              # switch active target for Cursor
-npm run list-plugins                         # see all plugins
-npm run use-plugin -- comparison             # back to template/
+cd template && npm run reset
 ```
 
-Import each plugin once in Figma: **Plugins → Development → Import plugin from manifest** → `plugins/<slug>/manifest.json`.
+## Plugin factory
 
-Full workflow: **`docs/11-plugin-factory.md`**. Cursor checks `plugins/.active` and writes to the matching folder.
+Use factory mode when you need several plugins side by side instead of resetting one harness:
+
+```bash
+npm run new-plugin -- org-chart       # create plugins/org-chart/, set active
+npm run use-plugin -- org-chart       # switch active target
+npm run list-plugins                  # list plugins and active slug
+npm run use-plugin -- comparison      # back to template/
+```
+
+Import each plugin once: **Plugins → Development → Import plugin from manifest** → `plugins/<slug>/manifest.json`.
+
+Cursor resolves the write target from `plugins/.active`. Details: `docs/11-plugin-factory.md`.
+
+## Project layout
+
+```
+.
+├── AGENTS.md                 # entry point for AI generation
+├── .cursor/
+│   ├── rules/                # always-on or file-scoped constraints
+│   └── skills/               # opt-in recipes (color picker, open APIs, factory)
+├── docs/                     # reference documentation
+├── reference/                # worked Generator + Action examples
+├── scaffold/                 # empty src/ starting point
+├── scripts/                  # new-plugin, use-plugin, list-plugins
+├── plugins/<slug>/           # one folder per plugin (factory mode)
+└── template/                 # single-plugin harness
+    └── src/
+        ├── code.ts           # sandbox logic (overwritten on generation)
+        ├── ui.template.html  # UI source (overwritten on generation)
+        └── ui.html           # built output — do not edit by hand
+```
+
+## AI context layers
+
+| Layer | Location | Role |
+|---|---|---|
+| Briefing | `AGENTS.md` | Hot path, trigger phrase, file edit boundaries |
+| Rules | `.cursor/rules/*.mdc` | Non-negotiable constraints (philosophy, UI, code shape) |
+| Docs | `docs/*.md` | Detailed patterns, API notes, troubleshooting |
+| Skills | `.cursor/skills/*/SKILL.md` | Focused recipes for specific problems |
+| Examples | `reference/` | End-to-end implementations to pattern-match |
+
+Rules stay short. Docs hold rationale and code samples. Skills load only when a prompt needs them.
+
+### Rules
+
+| File | Loads when | Covers |
+|---|---|---|
+| `00-philosophy.mdc` | Always | Core tool contract, forbidden UI terms |
+| `05-custom-tool-trigger.mdc` | Always | `Create a custom tool` workflow |
+| `10-plugin-code.mdc` | Editing `code.ts` | Messages, `regenerate`, output targeting |
+| `11-network-open-apis.mdc` | Network-related prompts | Public `fetch` patterns |
+| `20-ui-html.mdc` | Editing UI files | FigUI3, commit-fire, panel layout |
+| `30-manifest.mdc` | Editing `manifest.json` | Manifest stability |
+
+### Skills
+
+| Skill | Use for |
+|---|---|
+| `plugin-factory` | Creating or switching `plugins/<slug>/` folders |
+| `color-picker-ui` | `<fig-input-color>` markup, CSS, popover resize |
+| `open-api-tools` | Live data from public HTTP APIs |
+
+### Documentation
+
+| Doc | Topic |
+|---|---|
+| `docs/02-propskit-reference.md` | FigUI3 control catalog |
+| `docs/07-plugin-practices.md` | State, relaunch, output targeting, errors |
+| `docs/08-figui3-ui.md` | Bundling, spacing, color picker, auto-resize |
+| `docs/09-plugin-structure-and-reset.md` | File boundaries and reset workflow |
+| `docs/10-network-open-apis.md` | Network access without API keys |
+| `docs/11-plugin-factory.md` | Multi-plugin workflow |
+
+## Extending the context
+
+When generation misses a pattern:
+
+1. One-line, always-on fix → add to the relevant `.cursor/rules/*.mdc` file
+2. Rationale + examples → extend `docs/`
+3. Self-contained recipe → add `.cursor/skills/<name>/SKILL.md`
+4. Changes to read order or file targets → update `AGENTS.md`
+5. End-to-end pattern → add or extend `reference/`
+
+## Build commands
+
+Run inside `template/` or `plugins/<slug>/`:
+
+```bash
+npm run build        # bundle UI + compile TypeScript
+npm run bundle-ui    # regenerate ui.html from ui.template.html
+npm run reset        # restore src/ from scaffold/
+```
